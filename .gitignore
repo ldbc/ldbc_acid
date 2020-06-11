@@ -1,0 +1,62 @@
+esults
+
+plugin.xml_gen
+bin/
+target/
+tmp/
+.settings/
+MANIFEST.MF_gen
+.DS_Store*
+.metadata
+runtimeInfo
+workspace
+*._trace
+Thumbs.db
+.Rhistory
+.pydevproject
+deps/
+diagrams/*
+.idea
+log/
+catalog-v*.xml
+.RData
+.Rproj.user
+*.tar.gz
+*.zip
+*.gml
+
+# IntelliJ IDEA
+*.iml
+
+# Eclipse
+.project
+.classpath
+
+### Gradle ###
+.gradle
+build/
+
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
+
+# Cache of project
+.gradletasknamecache
+
+hs_err_*.log
+replay_*.log
+
+~*.*
+*.~*
+
+*.swp
+*.report
+classes/
+
+config-neo4j.sh
+
+base-db/
+work-db/
+*.tar.zst

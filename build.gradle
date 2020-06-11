@@ -1,0 +1,26 @@
+apply plugin: 'java'
+
+ext {
+    neo4jVersion = '4.0.5'
+    neo4jDriverVersion = '4.0.1'
+    neo4jApocVersion = '4.0.0.14'
+}
+
+repositories {
+    mavenCentral { metadataSources { mavenPom(); artifact() } }
+
+}
+
+dependencies {
+    compile group: 'org.neo4j', name: 'neo4j-bolt', version: neo4jVersion
+    compile group: 'org.neo4j.community', name: 'it-test-support', version: neo4jVersion
+    compile group: 'org.neo4j.driver', name: 'neo4j-java-driver', version: neo4jDriverVersion
+    compile group: 'org.neo4j.procedure', name: 'apoc', version: neo4jApocVersion
+    compile group: 'com.google.guava', name: 'guava', version: '29.0-jre'
+
+    compile group: 'org.janusgraph', name: 'janusgraph-core', version: '0.5.2'
+
+    compile group: 'io.dgraph', name: 'dgraph4j', version: '20.03.0'
+
+    testCompile 'junit:junit:4.12'
+}
