@@ -6,6 +6,11 @@ ext {
     neo4jApocVersion = '4.0.0.14'
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 repositories {
     mavenCentral { metadataSources { mavenPom(); artifact() } }
 
