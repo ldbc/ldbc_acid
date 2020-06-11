@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.dbms.api.DatabaseManagementService;
+import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -11,9 +12,11 @@ import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
+import org.neo4j.io.fs.FileUtils;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 import utils.Utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +31,19 @@ public class LdbcAcidMain {
 
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
         int port = 7777;
-        TestDatabaseManagementServiceBuilder builder = new TestDatabaseManagementServiceBuilder()
+        DatabaseManagementService managementService = new TestDatabaseManagementServiceBuilder()
                 .setConfig( BoltConnector.enabled, true )
-                .setConfig( BoltConnector.listen_address, new SocketAddress( "localhost", port) );
-        DatabaseManagementService managementService = builder.impermanent().build();
+                .setConfig( BoltConnector.listen_address, new SocketAddress( "localhost", port) )
+                .impermanent()
+                .build();
+//        FileUtils.deleteRecursively(new File("work-db"));
+//        DatabaseManagementService managementService = new DatabaseManagementServiceBuilder(new File("work-db"))
+//                .setConfig( BoltConnector.enabled, true )
+//                .setConfig( BoltConnector.listen_address, new SocketAddress( "localhost", port) )
+//                .build();
+        registerShutdownHook(managementService);
 
-        //try (
+        try {
         Driver driver = GraphDatabase.driver("bolt://localhost:" + port, AuthTokens.basic("neo4j", "neo4j"));
         // {
             Runtime.getRuntime().addShutdownHook(new Thread(managementService::shutdown));
@@ -66,12 +76,12 @@ public class LdbcAcidMain {
             final ImmutableMap<String, Object> luParam = ImmutableMap.of("personId", 1);
             System.out.println("LU");
             Transaction tx = session.beginTransaction();
-            tx.run("CREATE (:Person {id: $personId, numFriends: 0})", luParam);
+            tx.run("CREATE (:Person {id: 1, numFriends: 0})", luParam);
             tx.commit();
 
             // LU1
             List<MyTxn> txns = new ArrayList<>();
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 200; i++) {
                 final MyTxn txn = new MyTxn(lu1q, luParam, driver);
                 txns.add(txn);
             }
@@ -79,7 +89,7 @@ public class LdbcAcidMain {
             final List<Future<Void>> futures = executorService.invokeAll(txns);
             for (Future<Void> future : futures) {
                 future.get();
-//                System.out.print(".");
+                System.out.print(".");
             }
             System.out.println();
 
@@ -103,12 +113,11 @@ public class LdbcAcidMain {
             managementService.shutdown();
             System.out.println(Thread.currentThread().getName() + ": Database closed.");
 
-//        } finally {
-//            managementService.shutdown();
-//            System.out.println("shutdown ran.");
+        } finally {
+            managementService.shutdown();
+            System.out.println("shutdown ran.");
 //            System.exit(0);
-//        }
-        System.exit(0);
+        }
     }
 
     private static void registerShutdownHook(final DatabaseManagementService managementService) {
