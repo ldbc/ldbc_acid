@@ -25,11 +25,21 @@ dependencies {
     compile group: 'org.neo4j.procedure', name: 'apoc', version: neo4jApocVersion
     compile group: 'com.google.guava', name: 'guava', version: '29.0-jre'
 
-    compile group: 'org.janusgraph', name: 'janusgraph-core',      version: janusgraphVersion
-    compile group: 'org.janusgraph', name: 'janusgraph-driver',    version: janusgraphVersion
-    compile group: 'org.janusgraph', name: 'janusgraph-es',        version: janusgraphVersion
-    compile group: 'org.janusgraph', name: 'janusgraph-cassandra', version: janusgraphVersion
-    compile group: 'org.apache.tinkerpop', name: 'gremlin-driver', version: gremlinVersion
+    compile(group: 'org.janusgraph', name: 'janusgraph-core',      version: janusgraphVersion) {
+        exclude module: "logback-classic"
+    }
+    compile(group: 'org.janusgraph', name: 'janusgraph-driver',    version: janusgraphVersion) {
+        exclude module: "logback-classic"
+    }
+    compile(group: 'org.janusgraph', name: 'janusgraph-es',        version: janusgraphVersion) {
+        exclude module: "logback-classic"
+    }
+    compile(group: 'org.janusgraph', name: 'janusgraph-cassandra', version: janusgraphVersion) {
+        exclude module: "logback-classic"
+    }
+    compile(group: 'org.apache.tinkerpop', name: 'gremlin-driver', version: gremlinVersion) {
+        exclude module: "logback-classic"
+    }
 
 
     compile group: 'io.dgraph', name: 'dgraph4j', version: '20.03.0'
