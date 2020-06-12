@@ -37,6 +37,9 @@ dependencies {
     compile(group: 'org.janusgraph', name: 'janusgraph-cassandra', version: janusgraphVersion) {
         exclude module: "logback-classic"
     }
+    compile(group: 'org.janusgraph', name: 'janusgraph-cql', version: janusgraphVersion) {
+        exclude module: "logback-classic"
+    }
     compile(group: 'org.apache.tinkerpop', name: 'gremlin-driver', version: gremlinVersion) {
         exclude module: "logback-classic"
     }
