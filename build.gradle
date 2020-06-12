@@ -4,6 +4,8 @@ ext {
     neo4jVersion = '4.0.5'
     neo4jDriverVersion = '4.0.1'
     neo4jApocVersion = '4.0.0.14'
+    janusgraphVersion = '0.5.2'
+    gremlinVersion = '3.4.6'
 }
 
 java {
@@ -23,7 +25,12 @@ dependencies {
     compile group: 'org.neo4j.procedure', name: 'apoc', version: neo4jApocVersion
     compile group: 'com.google.guava', name: 'guava', version: '29.0-jre'
 
-    compile group: 'org.janusgraph', name: 'janusgraph-core', version: '0.5.2'
+    compile group: 'org.janusgraph', name: 'janusgraph-core',      version: janusgraphVersion
+    compile group: 'org.janusgraph', name: 'janusgraph-driver',    version: janusgraphVersion
+    compile group: 'org.janusgraph', name: 'janusgraph-es',        version: janusgraphVersion
+    compile group: 'org.janusgraph', name: 'janusgraph-cassandra', version: janusgraphVersion
+    compile group: 'org.apache.tinkerpop', name: 'gremlin-driver', version: gremlinVersion
+
 
     compile group: 'io.dgraph', name: 'dgraph4j', version: '20.03.0'
 
