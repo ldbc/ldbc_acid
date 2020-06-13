@@ -1,7 +1,9 @@
 package janusgraph;
 
+import com.google.common.collect.ImmutableMap;
 import driver.TestDriver;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
@@ -13,39 +15,87 @@ public class JanusGraphDriver extends TestDriver {
     private JanusGraph graph = JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
 
     @Override
-    public JanusGraphTransaction startTransaction() throws Exception {
+    public JanusGraphTransaction startTransaction()  {
         return graph.newTransaction();
     }
 
     @Override
-    public void commitTransaction(Object tt) throws Exception {
+    public void commitTransaction(Object tt) {
         JanusGraphTransaction transaction = (JanusGraphTransaction) tt;
         transaction.commit();
     }
 
     @Override
-    public void abortTransaction(Object tt) throws Exception {
+    public void abortTransaction(Object tt) {
         JanusGraphTransaction transaction = (JanusGraphTransaction) tt;
         transaction.rollback();
     }
 
     @Override
-    public void close() throws Exception {
+    public void close()  {
         graph.close();
     }
 
 
     @Override
     public void nukeDatabase() {
-        try {
-            JanusGraphTransaction transaction = startTransaction();
-            GraphTraversalSource g = transaction.traversal();
-            g.V().drop().iterate();
-            commitTransaction(transaction);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        g.V().drop().iterate(); //drop all vertices
+        commitTransaction(transaction);
+
+        close();//restart connection
+        graph = JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
+
     }
+
+    //****** IMP BLOCK ******//
+
+    @Override
+    public void impInit() {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        Vertex v = gWrite.addV().next();
+        v.property("id",1);
+        v.property("version",1);
+        transaction.commit();
+        graph.close();
+    }
+
+    @Override
+    public Map<String, Object> imp1(Map parameters) {
+
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        long personID = (long) parameters.get("personID");
+
+        if(gWrite.V().has("id",personID).hasNext()) {
+            Vertex currentVertex = gWrite.V().has("id", personID).next();
+            int currentVersion = currentVertex.value("version");
+            currentVertex.property("version", currentVersion + 1);
+            commitTransaction(transaction);
+            return ImmutableMap.of();
+        }
+        else
+            throw new IllegalStateException("IMP1 Person Missing from Graph");
+
+    }
+
+    @Override
+    public Map<String, Object> imp2(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        long personID  = (long) parameters.get("personID");
+        long sleepTime = (long) parameters.get("sleeptime");
+        int firstRead = gWrite.V().has("id",personID).next().value("version");
+        sleep(sleepTime);
+        int secondRead = gWrite.V().has("id",personID).next().value("version");
+
+        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+    }
+
+
+
 
     @Override
     public void g0Init() {
@@ -67,10 +117,7 @@ public class JanusGraphDriver extends TestDriver {
 
     }
 
-    @Override
-    public void impInit() {
 
-    }
 
     @Override
     public void pmpInit() {
@@ -147,15 +194,9 @@ public class JanusGraphDriver extends TestDriver {
         return null;
     }
 
-    @Override
-    public Map<String, Object> imp2(Map parameters) {
-        return null;
-    }
 
-    @Override
-    public Map<String, Object> imp1(Map parameters) {
-        return null;
-    }
+
+
 
     @Override
     public Map<String, Object> g1c2(Map parameters) {
