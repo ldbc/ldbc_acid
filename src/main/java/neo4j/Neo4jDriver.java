@@ -12,11 +12,11 @@ import org.neo4j.driver.Transaction;
 import java.util.List;
 import java.util.Map;
 
-public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>, Result> {
+public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Result> {
 
     protected Driver driver;
 
-    public Neo4jTestDriver() {
+    public Neo4jDriver() {
         driver = GraphDatabase.driver("bolt://localhost:" + 7777, AuthTokens.basic("neo4j", "neo4j"));
     }
 

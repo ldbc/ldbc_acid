@@ -2,7 +2,7 @@ package test;
 
 import com.google.common.collect.ImmutableMap;
 import driver.TestDriver;
-import main.TransactionThread;
+import transactions.TransactionThread;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

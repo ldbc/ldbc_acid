@@ -4,13 +4,13 @@ import java.util.Map;
 
 public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> implements AutoCloseable {
 
-    public abstract TestTransaction startTransaction();
+    public abstract TestTransaction startTransaction() throws Exception;
 
-    public abstract void commitTransaction(TestTransaction tt);
+    public abstract void commitTransaction(TestTransaction tt) throws Exception;
 
-    public abstract void abortTransaction(TestTransaction tt);
+    public abstract void abortTransaction(TestTransaction tt) throws Exception;
 
-    public abstract QueryResult runQuery(TestTransaction tt, String querySpecification, QueryParameters queryParameters);
+    public abstract QueryResult runQuery(TestTransaction tt, String querySpecification, QueryParameters queryParameters) throws Exception;
 
     public void sleep(long millis) {
         try {

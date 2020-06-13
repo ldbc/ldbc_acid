@@ -1,53 +1,50 @@
-package dgraph;
+package postgres;
 
-import com.google.gson.Gson;
-import com.google.protobuf.ByteString;
 import driver.TestDriver;
-import io.dgraph.DgraphClient;
-import io.dgraph.DgraphGrpc;
-import io.dgraph.DgraphProto;
-import io.dgraph.Transaction;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import org.postgresql.ds.PGConnectionPoolDataSource;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 
-public class DGraphTestDriver extends TestDriver<Transaction, Map<String, String>, DgraphProto.Response> {
+public class PostgresDriver extends TestDriver<Connection, Map<String, String>, ResultSet> {
 
-    protected DgraphClient client;
-    protected Gson gson = new Gson();
+    protected PGConnectionPoolDataSource ds;
 
-    public DGraphTestDriver() {
-        ManagedChannel channel1 = ManagedChannelBuilder
-                .forAddress("localhost", 9080)
-                .usePlaintext().build();
-        DgraphGrpc.DgraphStub stub1 = DgraphGrpc.newStub(channel1);
-        client = new DgraphClient(stub1);
+    public PostgresDriver() {
+        String endPoint = "TODO";
+
+        ds = new PGConnectionPoolDataSource();
+        ds.setDatabaseName("TODO");
+        ds.setServerName(endPoint);
+        ds.setUser("TODO");
+        ds.setPassword("TODO");
     }
 
     @Override
-    public Transaction startTransaction() {
-        return client.newTransaction();
+    public Connection startTransaction() throws SQLException {
+        return ds.getConnection();
     }
 
     @Override
-    public void commitTransaction(Transaction tt) {
+    public void commitTransaction(Connection tt) throws SQLException {
         tt.commit();
     }
 
     @Override
-    public void abortTransaction(Transaction tt) {
-        tt.discard();
+    public void abortTransaction(Connection tt) throws SQLException {
+        tt.rollback(); // rollback VS. abort?
     }
 
     @Override
-    public DgraphProto.Response runQuery(Transaction tt, String querySpecification, Map<String, String> queryParameters) {
+    public ResultSet runQuery(Connection tt, String querySpecification, Map<String, String> stringStringMap) {
         return null;
     }
 
     @Override
     public void nukeDatabase() {
-        // TODO
+        // TODO: delete all rows from the DB
     }
 
     @Override
@@ -62,6 +59,7 @@ public class DGraphTestDriver extends TestDriver<Transaction, Map<String, String
 
     @Override
     public void g1aInit() {
+
     }
 
     @Override
@@ -76,20 +74,7 @@ public class DGraphTestDriver extends TestDriver<Transaction, Map<String, String
 
     @Override
     public void g1bInit() {
-        final Transaction txn = startTransaction();
 
-        // Create data
-        Person person = new Person();
-        person.name = "Alice";
-
-        // Serialize it
-        String json = gson.toJson(person);
-        // Run mutation
-        DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
-                .setCommitNow(true) // ?
-                .setSetJson(ByteString.copyFromUtf8(json))
-                .build();
-        txn.mutate(mu);
     }
 
     @Override
@@ -209,6 +194,7 @@ public class DGraphTestDriver extends TestDriver<Transaction, Map<String, String
 
     @Override
     public void close() throws Exception {
-        // do nothing
+
     }
+
 }

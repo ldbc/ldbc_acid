@@ -1,11 +1,11 @@
 package test;
 
-import dgraph.DGraphTestDriver;
+import dgraph.DGraphDriver;
 
-public class DGraphAcidTest extends AcidTest<DGraphTestDriver> {
+public class DGraphAcidTest extends AcidTest<DGraphDriver> {
 
     public DGraphAcidTest() {
-        super(new DGraphTestDriver());
+        super(new DGraphDriver());
     }
 
 }
