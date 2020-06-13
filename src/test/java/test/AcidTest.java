@@ -36,7 +36,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     public void luTest() throws Exception {
         testDriver.luInit();
         final int nTransactions = 200;
-        final List<TransactionThread<Void, Void>> clients = Collections.nCopies(nTransactions, new TransactionThread(x -> testDriver.lu1(), null));
+        final List<TransactionThread<Void, Void>> clients = Collections.nCopies(nTransactions, new TransactionThread<>(x -> testDriver.lu1(), null));
         executorService.invokeAll(clients);
 
         final long nResults = testDriver.lu2();
@@ -146,13 +146,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void otvTest() throws Exception {
         testDriver.otvInit();
-//        final int uc = 1;
         final int rc = 50;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         clients.add(new TransactionThread<>(testDriver::otv1, ImmutableMap.of("personId", 1L)));
-//        for (int i = 0; i < uc; i++) {
-//        }
         for (int i = 0; i < rc; i++) {
             clients.add(new TransactionThread<>(testDriver::otv2, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
         }
