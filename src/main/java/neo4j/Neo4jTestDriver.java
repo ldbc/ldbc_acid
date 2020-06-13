@@ -191,31 +191,61 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
 
     @Override
     public void otvInit() {
-
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (p1:Person {id: 1, version: 0})-[:KNOWS]->" +
+                "  (:Person {id: 2, version: 0})-[:KNOWS]->" +
+                "  (:Person {id: 3, version: 0})-[:KNOWS]->" +
+                "  (:Person {id: 4, version: 0})-[:KNOWS]->(p1)");
+        tt.commit();
     }
 
     @Override
-    public Map<String, Object> otv(Map<String, Object> parameters) {
-        return null;
+    public Map<String, Object> otv1(Map<String, Object> parameters) {
+        for (int i = 0; i < 100; i++) {
+            final Transaction tt = startTransaction();
+            tt.run("MATCH path = (n:Person {id: $personId})-[:KNOWS*..4]->(n)\n" +
+                " UNWIND nodes(path)[0..4] AS person\n" +
+                " SET person.version = person.version + 1",
+                parameters);
+            tt.commit();
+        }
+        return ImmutableMap.of();
+    }
+
+    @Override
+    public Map<String, Object> otv2(Map<String, Object> parameters) {
+        final Transaction tt = startTransaction();
+
+        final Result result1 = tt.run("MATCH path1 = (n1:Person {id: $personId})-[:KNOWS*..4]->(n1) RETURN [p IN nodes(path1) | p.version][0..4] AS firstRead", parameters);
+        if (!result1.hasNext()) throw new IllegalStateException("OTV2 result1 empty");
+        final List<Object> firstRead = result1.next().get("firstRead").asList();
+
+        sleep((Long) parameters.get("sleepTime"));
+
+        final Result result2 = tt.run("MATCH path1 = (n1:Person {id: $personId})-[:KNOWS*..4]->(n1) RETURN [p IN nodes(path1) | p.version][0..4] AS secondRead", parameters);
+        if (!result2.hasNext()) throw new IllegalStateException("OTV2 result2 empty");
+        final List<Object> secondRead = result2.next().get("secondRead").asList();
+
+        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
     }
 
     @Override
     public void frInit() {
         final Transaction tt = startTransaction();
         tt.run("CREATE (p1:Person {id: 1, version: 0})-[:KNOWS]->" +
-                "            (  :Person {id: 2, version: 0})-[:KNOWS]->" +
-                "            (  :Person {id: 3, version: 0})-[:KNOWS]->" +
-                "            (  :Person {id: 4, version: 0})-[:KNOWS]->(p1)");
+                "  (:Person {id: 2, version: 0})-[:KNOWS]->" +
+                "  (:Person {id: 3, version: 0})-[:KNOWS]->" +
+                "  (:Person {id: 4, version: 0})-[:KNOWS]->(p1)");
         tt.commit();
     }
 
     @Override
     public Map<String, Object> fr1(Map<String, Object> parameters) {
-
         final Transaction tt = startTransaction();
         tt.run("MATCH path = (n:Person {id: $personId})-[:KNOWS*..4]->(n)\n" +
-                "        UNWIND nodes(path) AS person WITH DISTINCT person\n" +
-                "        SET person.version = person.version + 1", parameters);
+                " UNWIND nodes(path) AS person\n" +
+                " WITH DISTINCT person\n" +
+                " SET person.version = person.version + 1", parameters);
         tt.commit();
 
         return ImmutableMap.of();

@@ -6,7 +6,6 @@ import main.TransactionThread;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.neo4j.values.storable.LongValue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -137,9 +136,34 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         for (Future<Map<String, Object>> future : futures) {
             final Map<String, Object> results = future.get();
             if (results.containsKey("firstRead")) {
-                final Set<LongValue> firstRead  = new HashSet<>((List<LongValue>) results.get("firstRead"));
-                final Set<LongValue> secondRead = new HashSet<>((List<LongValue>) results.get("secondRead"));
+                final Set<Long> firstRead  = new HashSet<>((List<Long>) results.get("firstRead"));
+                final Set<Long> secondRead = new HashSet<>((List<Long>) results.get("secondRead"));
                 System.out.printf("FR:   %4s %4s %5b\n", firstRead, secondRead, !firstRead.equals(secondRead));
+            }
+        }
+    }
+
+    @Test
+    public void otvTest() throws Exception {
+        testDriver.otvInit();
+//        final int uc = 1;
+        final int rc = 50;
+
+        List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
+        clients.add(new TransactionThread<>(testDriver::otv1, ImmutableMap.of("personId", 1L)));
+//        for (int i = 0; i < uc; i++) {
+//        }
+        for (int i = 0; i < rc; i++) {
+            clients.add(new TransactionThread<>(testDriver::otv2, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
+        }
+
+        final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        for (Future<Map<String, Object>> future : futures) {
+            final Map<String, Object> results = future.get();
+            if (results.containsKey("firstRead")) {
+                final List<Long> firstRead  = ((List<Long>) results.get("firstRead" ));
+                final List<Long> secondRead = ((List<Long>) results.get("secondRead"));
+                System.out.printf("OTV:   %4s %4s %5b\n", firstRead, secondRead, Collections.max(firstRead) <= Collections.min(secondRead));
             }
         }
     }

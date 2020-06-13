@@ -73,7 +73,9 @@ public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> 
 
     public abstract void otvInit();
 
-    public abstract Map<String, Object> otv(Map<String, Object> parameters);
+    public abstract Map<String, Object> otv1(Map<String, Object> parameters);
+
+    public abstract Map<String, Object> otv2(Map<String, Object> parameters);
 
     // FR
 
