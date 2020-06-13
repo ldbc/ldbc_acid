@@ -2,10 +2,12 @@ package janusgraph;
 
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.janusgraph.core.*;
 import org.janusgraph.core.schema.VertexLabelMaker;
 import org.apache.tinkerpop.gremlin.structure.T;
 
+import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -16,21 +18,23 @@ public class JanusGraphTest {
         int tx1Total  = 100;
         int tx2Total  = 10000;
         int SleepMax  = 1000;
-        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ExecutorService executor = Executors.newFixedThreadPool(5);
         try {
             clearGraph();
             buildInitialGraph(GraphSize);
             Runnable tx1Task = () -> {
+                JanusGraph graph =JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
                 for(int i = 1;i<=tx1Total;i++) {
-                    JanusGraph graph =JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
                     int chosenID = (int) (Math.random() * GraphSize)+1;
-                    ItemCutTx1(graph,chosenID);
-                    graph.close();
+                    ItemCutTx1(graph,chosenID,i);
+
                 }
+                graph.close();
             };
             Runnable tx2Task = () -> {
+                JanusGraph graph =JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
+
                 for(int i = 1;i<=tx2Total;i++) {
-                    JanusGraph graph =JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
                     int chosenID = (int) (Math.random() * GraphSize)+1;
                     int chosenSleep = (int) (Math.random() * SleepMax)+1;
                     try {
@@ -38,7 +42,7 @@ public class JanusGraphTest {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    graph.close();
+                    //graph.close();
                 }
             };
             executor.execute(tx1Task);
@@ -74,21 +78,26 @@ public class JanusGraphTest {
         graph.close();
     }
 
-    public static void ItemCutTx1(JanusGraph graph,int ID) {
+    public static void ItemCutTx1(JanusGraph graph,int ID,int run) {
         JanusGraphTransaction transaction = graph.newTransaction();
         GraphTraversalSource gWrite = transaction.traversal();
         Vertex currentVertex = gWrite.V().has("id",ID).next();
         int currentVersion = currentVertex.value("version");
         currentVertex.property("version",currentVersion+1);
+        //Iterator<VertexProperty<Object>> x = currentVertex.properties();
+        //while(x.hasNext()){
+        //    System.out.println(Thread.currentThread().getName()+" "+x.next().value());
+       // }
+        currentVertex.property(Thread.currentThread().getName(),Thread.currentThread().getName());
         transaction.commit();
     }
 
     public static void ItemCutTx2(JanusGraph graph,int ID,int sleepTime) throws InterruptedException {
         JanusGraphTransaction transaction = graph.newTransaction();
-        GraphTraversalSource gWrite = transaction.traversal();
-        int firstRead = gWrite.V().has("id",ID).next().value("version");
+        GraphTraversalSource gWrite = graph.traversal();
+        int firstRead = graph.traversal().V().has("id",ID).next().value("version");
         Thread.sleep(sleepTime);
-        int secondRead = gWrite.V().has("id",ID).next().value("version");
+        int secondRead = graph.traversal().V().has("id",ID).next().value("version");
         if(firstRead!=secondRead){
             System.out.println("Anomaly Discovered");
         }
