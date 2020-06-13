@@ -34,17 +34,17 @@ public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> 
 
     public abstract void impInit();
 
-    public abstract Map<String, Long> imp1(long personId);
+    public abstract Map<String, Long> imp1(Map<String, Object> parameters);
 
-    public abstract Map<String, Long> imp2(long personId);
+    public abstract Map<String, Long> imp2(Map<String, Object> parameters);
 
     // PMP
 
     public abstract void pmpInit();
 
-    public abstract Map<String, Object> pmp1(long personId);
+    public abstract Map<String, Long> pmp1(Map<String, Object> parameters);
 
-    public abstract Map<String, Object> pmp2(long personId);
+    public abstract Map<String, Long> pmp2(Map<String, Object> parameters);
 
 
 }

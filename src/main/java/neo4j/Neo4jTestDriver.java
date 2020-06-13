@@ -94,27 +94,57 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
     }
 
     @Override
-    public Map<String, Long> imp1(long personId) {
+    public Map<String, Long> imp1(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
-        tt.run("MATCH (p:Person {id: $personId}) SET p.version = p.version + 1 RETURN p",
-                ImmutableMap.of("personId", personId));
+        tt.run("MATCH (p:Person {id: $personId}) SET p.version = p.version + 1 RETURN p", parameters);
         tt.commit();
         return ImmutableMap.of();
     }
 
     @Override
-    public Map<String, Long> imp2(long personId) {
+    public Map<String, Long> imp2(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
-        final Result result1 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS firstRead", ImmutableMap.of("personId", personId));
+        final Result result1 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS firstRead", parameters);
         if (!result1.hasNext()) throw new IllegalStateException("IMP result1 empty");
         final long firstRead = result1.next().get("firstRead").asLong();
 
-        sleep(250);
+        sleep((Long) parameters.get("sleepTime"));
 
-        final Result result2 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS secondRead", ImmutableMap.of("personId", personId));
-
+        final Result result2 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS secondRead", parameters);
         if (!result2.hasNext()) throw new IllegalStateException("IMP result2 empty");
+        final long secondRead = result2.next().get("secondRead").asLong();
+
+        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+    }
+
+    @Override
+    public void pmpInit() {
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (:Person {id: 1}), (:Post {id: 1})");
+        tt.commit();
+    }
+
+    @Override
+    public Map<String, Long> pmp1(Map<String, Object> parameters) {
+        final Transaction tt = startTransaction();
+        tt.run("MATCH (pe:Person {id: $personId}), (po:Post {id: $postId}) CREATE (pe)-[:LIKES]->(po)", parameters);
+        tt.commit();
+        return ImmutableMap.of();
+    }
+
+    @Override
+    public Map<String, Long> pmp2(Map<String, Object> parameters) {
+        final Transaction tt = startTransaction();
+
+        final Result result1 = tt.run("MATCH (po1:Post {id: $postId})<-[:LIKES]-(pe1:Person) RETURN count(pe1) AS firstRead", parameters);
+        if (!result1.hasNext()) throw new IllegalStateException("PMP result1 empty");
+        final long firstRead = result1.next().get("firstRead").asLong();
+
+        sleep((Long) parameters.get("sleepTime"));
+
+        final Result result2 = tt.run("MATCH (po2:Post {id: $postId})<-[:LIKES]-(pe2:Person) RETURN count(pe2) AS secondRead", parameters);
+        if (!result2.hasNext()) throw new IllegalStateException("PMP result2 empty");
         final long secondRead = result2.next().get("secondRead").asLong();
 
         return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
@@ -122,22 +152,5 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
 
     // PMP
 
-    @Override
-    public void pmpInit() {
-        final Transaction tt = startTransaction();
-        tt.run("CREATE (:PersonY {id: 1, version: 1})");
-        tt.commit();
-
-    }
-
-    @Override
-    public Map<String, Object> pmp1(long personId) {
-        return ImmutableMap.of();
-    }
-
-    @Override
-    public Map<String, Object> pmp2(long personId) {
-        return ImmutableMap.of();
-    }
 
 }
