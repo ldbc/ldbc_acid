@@ -77,14 +77,14 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
     @Override
     public void impInit() {
         final Transaction tt = startTransaction();
-        tt.run("CREATE (:Person {id: 0, version: 1}), (:Person {id: 1, version: 2})");
+        tt.run("CREATE (:PersonX {id: 1, version: 1})");
         tt.commit();
     }
 
     @Override
     public void imp1(long personId) {
         final Transaction tt = startTransaction();
-        tt.run("MATCH (p:Person {id: $personId}) SET p.version = p.version + 1",
+        tt.run("MATCH (p:PersonX {id: $personId}) SET p.version = p.version + 1 RETURN p",
                 ImmutableMap.of("personId", personId));
         tt.commit();
     }
@@ -92,7 +92,7 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
     @Override
     public boolean imp2(long personId) {
         final Transaction tt = startTransaction();
-        final Result result1 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS firstRead", ImmutableMap.of("personId", personId));
+        final Result result1 = tt.run("MATCH (p:PersonX {id: $personId}) RETURN p.version AS firstRead", ImmutableMap.of("personId", personId));
         if (!result1.hasNext()) {
             System.out.println("result1 empty");
             return false;
@@ -105,13 +105,13 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
             e.printStackTrace();
         }
 
-        final Result result2 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS secondRead", ImmutableMap.of("personId", personId));
+        final Result result2 = tt.run("MATCH (p:PersonX {id: $personId}) RETURN p.version AS secondRead", ImmutableMap.of("personId", personId));
         if (!result2.hasNext()) {
             System.out.println("result2 empty");
             return false;
         }
         final long secondRead = result2.next().get("secondRead").asLong();
-        System.out.println(firstRead == secondRead);
+        if (firstRead != secondRead) System.out.println(String.format("%d vs. %d", firstRead, secondRead));
         return firstRead == secondRead;
     }
 
