@@ -22,6 +22,67 @@ public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> 
 
     public abstract void nukeDatabase();
 
+    // G0 Dirty Write
+
+    public abstract void g0Init();
+
+    public abstract Map<String, Object> g0(Map<String, Object> parameters);
+
+
+    // G1a Intermediate Reads
+
+    public abstract void g1aInit();
+
+    public abstract Map<String, Object> g1a1(Map<String, Object> parameters);
+
+    public abstract Map<String, Object> g1a2(Map<String, Object> parameters);
+
+    // G1b Intermediate Reads
+
+    public abstract void g1bInit();
+
+    public abstract Map<String, Object> g1b1(Map<String, Object> parameters);
+
+    public abstract Map<String, Object> g1b2(Map<String, Object> parameters);
+
+    // G1b Intermediate Reads
+
+    public abstract void g1cInit();
+
+    public abstract Map<String, Object> g1c1(Map<String, Object> parameters);
+
+    public abstract Map<String, Object> g1c2(Map<String, Object> parameters);
+
+    // IMP
+
+    public abstract void impInit();
+
+    public abstract Map<String, Object> imp1(Map<String, Object> parameters);
+
+    public abstract Map<String, Object> imp2(Map<String, Object> parameters);
+
+    // PMP
+
+    public abstract void pmpInit();
+
+    public abstract Map<String, Object> pmp1(Map<String, Object> parameters);
+
+    public abstract Map<String, Object> pmp2(Map<String, Object> parameters);
+
+    // OTV
+
+    public abstract void otvInit();
+
+    public abstract Map<String, Object> otv(Map<String, Object> parameters);
+
+    // FR
+
+    public abstract void frInit();
+
+    public abstract Map<String, Object> fr1(Map<String, Object> parameters);
+
+    public abstract Map<String, Object> fr2(Map<String, Object> parameters);
+
     // LU
 
     public abstract void luInit();
@@ -30,21 +91,13 @@ public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> 
 
     public abstract long lu2();
 
-    // IMP
+    // WS
 
-    public abstract void impInit();
+    public abstract void wsInit();
 
-    public abstract Map<String, Long> imp1(Map<String, Object> parameters);
+    public abstract Map<String, Object> ws1(Map<String, Object> parameters);
 
-    public abstract Map<String, Long> imp2(Map<String, Object> parameters);
-
-    // PMP
-
-    public abstract void pmpInit();
-
-    public abstract Map<String, Long> pmp1(Map<String, Object> parameters);
-
-    public abstract Map<String, Long> pmp2(Map<String, Object> parameters);
+    public abstract Map<String, Object> ws2(Map<String, Object> parameters);
 
 
 }
