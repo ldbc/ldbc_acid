@@ -15,16 +15,18 @@ java {
 
 repositories {
     mavenCentral { metadataSources { mavenPom(); artifact() } }
-
+    jcenter() // for TigerGraph
 }
 
 dependencies {
+    // Neo4j embedded and driver
     compile group: 'org.neo4j', name: 'neo4j-bolt', version: neo4jVersion
     compile group: 'org.neo4j.community', name: 'it-test-support', version: neo4jVersion
     compile group: 'org.neo4j.driver', name: 'neo4j-java-driver', version: neo4jDriverVersion
     compile group: 'org.neo4j.procedure', name: 'apoc', version: neo4jApocVersion
     compile group: 'com.google.guava', name: 'guava', version: '29.0-jre'
 
+    // JanusGraph
     compile(group: 'org.janusgraph', name: 'janusgraph-core',      version: janusgraphVersion) {
         exclude module: "logback-classic"
     }
@@ -44,8 +46,15 @@ dependencies {
         exclude module: "logback-classic"
     }
 
-
+    // Dgraph
     compile group: 'io.dgraph', name: 'dgraph4j', version: '20.03.0'
+
+    // PostgreSQL
+//    compile group: 'ru.yandex.qatools.embed', name: 'postgresql-embedded', version: '2.10'
+
+    // TigerGraph
+    // dependency seems unmaintained
+//    compile group: 'com.tigergraph.client', name: 'gsql_client', version: '2.5.2'
 
     testCompile 'junit:junit:4.12'
 }
