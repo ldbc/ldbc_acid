@@ -1,8 +1,13 @@
 package neo4j;
 
+import apoc.util.Utils;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.dbms.api.DatabaseManagementService;
+import org.neo4j.exceptions.KernelException;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.kernel.api.procedure.GlobalProcedures;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 
 public class Neo4jEmbeddedDb implements AutoCloseable {
@@ -18,7 +23,13 @@ public class Neo4jEmbeddedDb implements AutoCloseable {
                 .build();
         registerShutdownHook(managementService);
 
-
+        final GraphDatabaseService db = managementService.database("neo4j");
+        GlobalProcedures globalProcedures = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(GlobalProcedures.class);
+        try {
+            globalProcedures.registerProcedure(Utils.class, true);
+        } catch (KernelException e) {
+            throw new RuntimeException("while registering procedure ", e);
+        }
     }
 
     private static void registerShutdownHook(final DatabaseManagementService managementService) {
