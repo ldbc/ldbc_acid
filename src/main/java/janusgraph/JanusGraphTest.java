@@ -95,9 +95,9 @@ public class JanusGraphTest {
     public static void ItemCutTx2(JanusGraph graph,int ID,int sleepTime) throws InterruptedException {
         JanusGraphTransaction transaction = graph.newTransaction();
         GraphTraversalSource gWrite = graph.traversal();
-        int firstRead = graph.traversal().V().has("id",ID).next().value("version");
+        int firstRead = gWrite.V().has("id",ID).next().value("version");
         Thread.sleep(sleepTime);
-        int secondRead = graph.traversal().V().has("id",ID).next().value("version");
+        int secondRead = gWrite.V().has("id",ID).next().value("version");
         if(firstRead!=secondRead){
             System.out.println("Anomaly Discovered");
         }
