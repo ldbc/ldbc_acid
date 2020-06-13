@@ -64,17 +64,36 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
 
     @Override
     public void g1aInit() {
-
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (:Person {id: 1, version: 1})");
+        tt.commit();
     }
 
     @Override
     public Map<String, Object> g1a1(Map<String, Object> parameters) {
-        return null;
+        final Transaction tt = startTransaction();
+
+        tt.run("MATCH (p:Person {id: $personId})" +
+                "WITH p\n" +
+                "CALL apoc.util.sleep($sleepTime)\n" +
+                "SET p.version = 2\n" +
+                "WITH p\n" +
+                "CALL apoc.util.sleep($sleepTime)\n" +
+                "RETURN p", parameters);
+
+        abortTransaction(tt);
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> g1a2(Map<String, Object> parameters) {
-        return null;
+        final Transaction tt = startTransaction();
+
+        final Result result = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS pVersion", parameters);
+        if (!result.hasNext()) throw new IllegalStateException("G1a T2 result empty");
+        final long pVersion = result.next().get("pVersion").asLong();
+
+        return ImmutableMap.of("pVersion", pVersion);
     }
 
     @Override
@@ -109,6 +128,9 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
 
     @Override
     public void g1cInit() {
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (:Person {id: 1, version: 99})");
+        tt.commit();
     }
 
     @Override

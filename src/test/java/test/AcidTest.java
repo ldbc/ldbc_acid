@@ -44,6 +44,31 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     }
 
     @Test
+    public void g1aTest() throws Exception {
+        testDriver.g1aInit();
+        final int uc = 5;
+        final int rc = 5;
+
+        List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
+        for (int i = 0; i < uc; i++) {
+            clients.add(new TransactionThread<>(testDriver::g1a1, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
+        }
+        for (int i = 0; i < rc; i++) {
+            clients.add(new TransactionThread<>(testDriver::g1a2, ImmutableMap.of("personId", 1L)));
+        }
+
+        final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        for (Future<Map<String, Object>> future : futures) {
+            final Map<String, Object> results = future.get();
+            if (results.containsKey("pVersion")) {
+                final long pVersion = (long) results.get("pVersion");
+
+                System.out.printf("G1a:   %4d %4d %5b\n", 1L, pVersion, 1L == pVersion);
+            }
+        }
+    }
+
+    @Test
     public void g1bTest() throws Exception {
         testDriver.g1bInit();
         final int uc = 1;
