@@ -1,20 +1,21 @@
 package main;
 
 import java.util.concurrent.Callable;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class TransactionThread implements Callable<Void> {
+public class TransactionThread<T, R> implements Callable<R> {
 
-    final Consumer<Void> f;
+    final Function<T, R> f;
+    final T t;
 
-    public TransactionThread(Consumer<Void> f) {
+    public TransactionThread(Function<T, R> f, T t) {
         this.f = f;
+        this.t = t;
     }
 
     @Override
-    public Void call() throws Exception {
-        f.accept(null);
-        return null;
+    public R call() throws Exception {
+        return f.apply(t);
     }
 
 }

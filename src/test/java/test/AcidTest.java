@@ -9,14 +9,16 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public abstract class AcidTest<TTestDriver extends TestDriver> {
 
     protected TTestDriver testDriver;
-    protected ExecutorService executorService;
+    protected ExecutorService executorService = Executors.newFixedThreadPool(8);
 
     public AcidTest(TTestDriver testDriver) {
         this.testDriver = testDriver;
@@ -24,18 +26,18 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
     @Before
     public void initialize() {
-        executorService = Executors.newFixedThreadPool(8);
+        testDriver.nukeDatabase();
     }
 
     @Test
     public void luTest() throws Exception {
         testDriver.luInit();
         final int nTransactions = 200;
-        final List<TransactionThread> clients = Collections.nCopies(nTransactions, new TransactionThread(testDriver::lu1));
+        final List<TransactionThread<Void, Void>> clients = Collections.nCopies(nTransactions, new TransactionThread(x -> testDriver.lu1(), null));
         executorService.invokeAll(clients);
 
         final long nResults = testDriver.lu2();
-        System.out.println(String.format("LU:    %4d %4d %5b", nTransactions, nResults, nTransactions == nResults));
+        System.out.printf("LU:    %4d %4d %5b\n", nTransactions, nResults, nTransactions == nResults);
     }
 
     @Test
@@ -44,18 +46,25 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         final int uc = 1;
         final int rc = 1;
 
-        List<TransactionThread> clients = new ArrayList<>();
-
+        List<TransactionThread<Long, Map<String, Long>>> clients = new ArrayList<>();
         for (int i = 0; i < uc; i++) {
-            final long personId = 1;
-            clients.add(new TransactionThread(x -> testDriver.imp1(personId)));
+            clients.add(new TransactionThread<>(testDriver::imp1, 1L));
         }
         for (int i = 0; i < rc; i++) {
-            final long personId = 1;
-            clients.add(new TransactionThread(x -> testDriver.imp2(personId)));
+            clients.add(new TransactionThread<>(testDriver::imp2, 1L));
         }
 
-        executorService.invokeAll(clients);
+        final List<Future<Map<String, Long>>> futures = executorService.invokeAll(clients);
+        for (Future<Map<String, Long>> future : futures) {
+            final Map<String, Long> results = future.get();
+            if (results.containsKey("firstRead")) {
+                final long firstRead = results.get("firstRead").longValue();
+                final long secondRead = results.get("secondRead").longValue();
+                System.out.printf("IMP:   %4d %4d %5b\n", firstRead, secondRead, firstRead == secondRead);
+            }
+        }
+
+
 
 //        System.out.println(String.format("IMP:   %4d %4d %5b", nTransactions, nResults, nTransactions == nResults));
     }

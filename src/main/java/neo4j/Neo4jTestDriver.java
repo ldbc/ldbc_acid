@@ -45,6 +45,15 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
     }
 
     @Override
+    public void nukeDatabase() {
+        final Transaction tt = startTransaction();
+        tt.run("MATCH (n) DETACH DELETE n");
+        tt.commit();
+    }
+
+    // LU
+
+    @Override
     public void luInit() {
         final Transaction tt = startTransaction();
         tt.run("CREATE (:Person {id: 1, numFriends: 0})");
@@ -52,12 +61,13 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
     }
 
     @Override
-    public void lu1(Void aVoid) {
+    public Void lu1() {
         final Transaction tt = startTransaction();
         tt.run("MATCH (p1:Person {id: 1})\n" +
                 "SET p1.numFriends = p1.numFriends + 1\n" +
                 "RETURN p1.numFriends\n");
         tt.commit();
+        return null;
     }
 
     @Override
@@ -74,45 +84,60 @@ public class Neo4jTestDriver extends TestDriver<Transaction, Map<String, Object>
         return numFriends;
     }
 
+    // IMP
+
     @Override
     public void impInit() {
         final Transaction tt = startTransaction();
-        tt.run("CREATE (:PersonX {id: 1, version: 1})");
+        tt.run("CREATE (:Person {id: 1, version: 1})");
         tt.commit();
     }
 
     @Override
-    public void imp1(long personId) {
+    public Map<String, Long> imp1(long personId) {
         final Transaction tt = startTransaction();
-        tt.run("MATCH (p:PersonX {id: $personId}) SET p.version = p.version + 1 RETURN p",
+        tt.run("MATCH (p:Person {id: $personId}) SET p.version = p.version + 1 RETURN p",
                 ImmutableMap.of("personId", personId));
         tt.commit();
+        return ImmutableMap.of();
     }
 
     @Override
-    public boolean imp2(long personId) {
+    public Map<String, Long> imp2(long personId) {
         final Transaction tt = startTransaction();
-        final Result result1 = tt.run("MATCH (p:PersonX {id: $personId}) RETURN p.version AS firstRead", ImmutableMap.of("personId", personId));
-        if (!result1.hasNext()) {
-            System.out.println("result1 empty");
-            return false;
-        }
+
+        final Result result1 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS firstRead", ImmutableMap.of("personId", personId));
+        if (!result1.hasNext()) throw new IllegalStateException("IMP result1 empty");
         final long firstRead = result1.next().get("firstRead").asLong();
 
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        sleep(250);
 
-        final Result result2 = tt.run("MATCH (p:PersonX {id: $personId}) RETURN p.version AS secondRead", ImmutableMap.of("personId", personId));
-        if (!result2.hasNext()) {
-            System.out.println("result2 empty");
-            return false;
-        }
+        final Result result2 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS secondRead", ImmutableMap.of("personId", personId));
+
+        if (!result2.hasNext()) throw new IllegalStateException("IMP result2 empty");
         final long secondRead = result2.next().get("secondRead").asLong();
-        if (firstRead != secondRead) System.out.println(String.format("%d vs. %d", firstRead, secondRead));
-        return firstRead == secondRead;
+
+        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+    }
+
+    // PMP
+
+    @Override
+    public void pmpInit() {
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (:PersonY {id: 1, version: 1})");
+        tt.commit();
+
+    }
+
+    @Override
+    public Map<String, Object> pmp1(long personId) {
+        return ImmutableMap.of();
+    }
+
+    @Override
+    public Map<String, Object> pmp2(long personId) {
+        return ImmutableMap.of();
     }
 
 }
