@@ -183,13 +183,13 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Void lu1() {
+    public Map<String, Object> lu1(Map<String, Object> parameters) {
         return null;
     }
 
     @Override
-    public long lu2() {
-        return 0;
+    public Map<String, Object> lu2(Map<String, Object> parameters) {
+        return null;
     }
 
     @Override

@@ -332,27 +332,28 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
     }
 
     @Override
-    public Void lu1() {
+    public Map<String, Object> lu1(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         tt.run("MATCH (p1:Person {id: 1})\n" +
                 "SET p1.numFriends = p1.numFriends + 1\n" +
                 "RETURN p1.numFriends\n");
         tt.commit();
-        return null;
+        return ImmutableMap.of();
     }
 
     @Override
-    public long lu2() {
+    public Map<String, Object> lu2(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
-        final Result result = tt.run("MATCH (p:Person {id: 1})\n" +
+        final Result result = tt.run("MATCH (p:Person {id: $personId})\n" +
                 "OPTIONAL MATCH (p)-[k:KNOWS]->()\n" +
                 "WITH p, count(k) AS numKnowsEdges\n" +
                 "RETURN numKnowsEdges,\n" +
-                "       p.numFriends AS numFriendsProp\n");
+                "       p.numFriends AS numFriendsProp\n",parameters);
         final Record record = result.next();
         long numKnowsEdges = record.get("numKnowsEdges").asLong();
         long numFriends = record.get("numFriendsProp").asLong();
-        return numFriends;
+        return ImmutableMap.of("numKnowsEdges", numKnowsEdges, "numFriendsProp", numFriends);
+
     }
 
     @Override

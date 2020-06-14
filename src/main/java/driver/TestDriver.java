@@ -88,9 +88,9 @@ public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> 
 
     public abstract void luInit();
 
-    public abstract Void lu1();
+    public abstract Map<String, Object> lu1(Map<String, Object> parameters);
 
-    public abstract long lu2();
+    public abstract Map<String, Object> lu2(Map<String, Object> parameters);
 
     // WS
 

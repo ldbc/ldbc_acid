@@ -274,7 +274,45 @@ public class JanusGraphDriver extends TestDriver {
             throw new IllegalStateException("PMP2 Person or Post Missing from Graph");
     }
 
+    @Override
+    public void luInit() {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        Vertex person = g.addV("Person").next();
+        person.property("id",1L);
+        person.property("numFriends",0L);
+        commitTransaction(transaction);
+    }
 
+
+
+    @Override
+    public Map<String, Object>  lu1(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        if(g.V().hasLabel("Person").has("id",1).hasNext()){
+            Vertex firstPerson  = g.V().hasLabel("Person").has("id", 1).next();
+            Vertex secondPerson = g.addV("Person").next();
+            secondPerson.property("id",2L);
+            firstPerson.addEdge("Likes",secondPerson);
+            commitTransaction(transaction);
+            return null;
+        }
+        else
+            throw new IllegalStateException("LU1 Person Missing from Graph");
+
+    }
+
+    @Override
+    public Map<String, Object> lu2(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        if((g.V().hasLabel("Person").has("id",1).hasNext()) &&
+           (g.V().hasLabel("Person").has("id",2).hasNext())){
+
+        }
+        return null;
+    }
 
 
     @Override
@@ -299,20 +337,9 @@ public class JanusGraphDriver extends TestDriver {
 
     }
 
-    @Override
-    public void luInit() {
 
-    }
 
-    @Override
-    public Void lu1() {
-        return null;
-    }
 
-    @Override
-    public long lu2() {
-        return 0;
-    }
 
     @Override
     public void wsInit() {

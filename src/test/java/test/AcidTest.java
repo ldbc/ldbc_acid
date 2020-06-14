@@ -36,14 +36,16 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     public void luTest() throws Exception {
         testDriver.luInit();
         final int nTransactions = 200;
-        List<TransactionThread<Map<String, Object>, Void>> clients = new ArrayList<>();
+        List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < nTransactions; i++) {
-            clients.add(new TransactionThread<>(i, x -> testDriver.lu1(), null));
+            clients.add(new TransactionThread<>(i, testDriver::lu1, ImmutableMap.of("person1Id", 1L,"person2Id",(i+2))));
         }
         executorService.invokeAll(clients);
-
-        final long nResults = testDriver.lu2();
-        System.out.printf("LU:    %4d %4d %5b\n", nTransactions, nResults, nTransactions == nResults);
+        Map<String, Object> results = testDriver.lu2(ImmutableMap.of("personId", 1L));
+        final long numFriendsProp = (long) results.get("numFriendsProp");
+        final long numKnowsEdges = (long) results.get("numKnowsEdges");
+        final boolean pass = ((nTransactions == numFriendsProp)&&(nTransactions == numKnowsEdges));
+        System.out.printf("LU:    %4d %4d %4d %5b\n", nTransactions, numFriendsProp, numKnowsEdges, pass);
     }
 
     @Test
