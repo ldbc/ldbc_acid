@@ -93,7 +93,50 @@ public class JanusGraphDriver extends TestDriver {
         return ImmutableMap.of("firstRead", (long) firstRead, "secondRead", (long) secondRead);
     }
 
+    //****** G1A BLOCK ******//
 
+    @Override
+    public void g1aInit() {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        Vertex v = gWrite.addV().next();
+        v.property("id",1L);
+        v.property("version",1L);
+        transaction.commit();
+    }
+
+    @Override
+    public Map<String, Object> g1a1(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        long personID = (long) parameters.get("personId");
+        long sleepTime = (long) parameters.get("sleepTime");
+        if(gWrite.V().has("id",personID).hasNext()) {
+            Vertex currentVertex = gWrite.V().has("id", personID).next();
+            int currentVersion = currentVertex.value("version");
+            sleep(sleepTime);
+            currentVertex.property("version", currentVersion + 1L);
+            sleep(sleepTime);
+            abortTransaction(transaction);
+            return ImmutableMap.of();
+        }
+        else
+            throw new IllegalStateException("IMP1 Person Missing from Graph");
+    }
+
+    @Override
+    public Map<String, Object> g1a2(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        long personID = (long) parameters.get("personId");
+        if(gWrite.V().has("id",personID).hasNext()) {
+            Vertex currentVertex = gWrite.V().has("id", personID).next();
+            int pVersion = currentVertex.value("version");
+            return ImmutableMap.of("pVersion", (long) pVersion);
+        }
+        else
+            throw new IllegalStateException("IMP1 Person Missing from Graph");
+    }
 
 
     @Override
@@ -101,10 +144,7 @@ public class JanusGraphDriver extends TestDriver {
 
     }
 
-    @Override
-    public void g1aInit() {
 
-    }
 
     @Override
     public void g1bInit() {
@@ -116,6 +156,10 @@ public class JanusGraphDriver extends TestDriver {
 
     }
 
+    @Override
+    public Map<String, Object> g1c(Map parameters) {
+        return null;
+    }
 
 
     @Override
@@ -193,20 +237,6 @@ public class JanusGraphDriver extends TestDriver {
         return null;
     }
 
-
-
-
-
-    @Override
-    public Map<String, Object> g1c2(Map parameters) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> g1c1(Map parameters) {
-        return null;
-    }
-
     @Override
     public Map<String, Object> g1b2(Map parameters) {
         return null;
@@ -217,15 +247,7 @@ public class JanusGraphDriver extends TestDriver {
         return null;
     }
 
-    @Override
-    public Map<String, Object> g1a2(Map parameters) {
-        return null;
-    }
 
-    @Override
-    public Map<String, Object> g1a1(Map parameters) {
-        return null;
-    }
 
     @Override
     public Map<String, Object> g0(Map parameters) {
