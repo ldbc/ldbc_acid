@@ -56,10 +56,9 @@ public class JanusGraphDriver extends TestDriver {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource gWrite = transaction.traversal();
         Vertex v = gWrite.addV().next();
-        v.property("id",1);
-        v.property("version",1);
+        v.property("id",1L);
+        v.property("version",1L);
         transaction.commit();
-        graph.close();
     }
 
     @Override
@@ -67,12 +66,12 @@ public class JanusGraphDriver extends TestDriver {
 
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource gWrite = transaction.traversal();
-        long personID = (long) parameters.get("personID");
+        long personID = (long) parameters.get("personId");
 
         if(gWrite.V().has("id",personID).hasNext()) {
             Vertex currentVertex = gWrite.V().has("id", personID).next();
             int currentVersion = currentVertex.value("version");
-            currentVertex.property("version", currentVersion + 1);
+            currentVertex.property("version", currentVersion + 1L);
             commitTransaction(transaction);
             return ImmutableMap.of();
         }
@@ -85,13 +84,13 @@ public class JanusGraphDriver extends TestDriver {
     public Map<String, Object> imp2(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource gWrite = transaction.traversal();
-        long personID  = (long) parameters.get("personID");
-        long sleepTime = (long) parameters.get("sleeptime");
-        int firstRead = gWrite.V().has("id",personID).next().value("version");
+        long personID  = (long) parameters.get("personId");
+        long sleepTime = (long) parameters.get("sleepTime");
+        int firstRead =  gWrite.V().has("id",personID).next().value("version");
         sleep(sleepTime);
         int secondRead = gWrite.V().has("id",personID).next().value("version");
 
-        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+        return ImmutableMap.of("firstRead", (long) firstRead, "secondRead", (long) secondRead);
     }
 
 
