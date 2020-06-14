@@ -129,18 +129,23 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
     @Override
     public void g1cInit() {
         final Transaction tt = startTransaction();
-        tt.run("CREATE (:Person {id: 1, version: 99})");
+        tt.run("CREATE (:Person {id: 1, version: 0}), (:Person {id: 2, version: 0})");
         tt.commit();
     }
 
     @Override
-    public Map<String, Object> g1c1(Map<String, Object> parameters) {
-        return null;
-    }
+    public Map<String, Object> g1c(Map<String, Object> parameters) { // TODO: just g1c should suffice
+        final Transaction tt = startTransaction();
 
-    @Override
-    public Map<String, Object> g1c2(Map<String, Object> parameters) {
-        return null;
+        Result result = tt.run("MATCH (p1:Person {id: $person1Id})\n" +
+                "SET p1.version = $transactionId\n" +
+                "WITH count(*) AS dummy\n" +
+                "MATCH (p2:Person {id: $person2Id})\n" +
+                "RETURN p2.version AS person2Version\n", parameters);
+        final int person2Version = result.next().get("person2Version").asInt();
+        tt.commit();
+
+        return ImmutableMap.of("person2Version", person2Version);
     }
 
     // IMP

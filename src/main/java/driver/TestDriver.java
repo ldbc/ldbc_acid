@@ -49,9 +49,7 @@ public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> 
 
     public abstract void g1cInit();
 
-    public abstract Map<String, Object> g1c1(Map<String, Object> parameters);
-
-    public abstract Map<String, Object> g1c2(Map<String, Object> parameters);
+    public abstract Map<String, Object> g1c(Map<String, Object> parameters);
 
     // IMP
 
