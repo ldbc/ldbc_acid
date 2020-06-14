@@ -121,7 +121,7 @@ public class JanusGraphDriver extends TestDriver {
             return ImmutableMap.of();
         }
         else
-            throw new IllegalStateException("IMP1 Person Missing from Graph");
+            throw new IllegalStateException("G1A1 Person Missing from Graph");
     }
 
     @Override
@@ -135,8 +135,58 @@ public class JanusGraphDriver extends TestDriver {
             return ImmutableMap.of("pVersion", (long) pVersion);
         }
         else
-            throw new IllegalStateException("IMP1 Person Missing from Graph");
+            throw new IllegalStateException("G1A2 Person Missing from Graph");
     }
+
+
+    //****** G1B BLOCK ******//
+
+    @Override
+    public void g1bInit() {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        Vertex v = gWrite.addV().next();
+        v.property("id",1L);
+        v.property("version",99L);
+        transaction.commit();
+    }
+
+    @Override
+    public Map<String, Object> g1b1(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        long personID  = (long) parameters.get("personId");
+        long sleepTime = (long) parameters.get("sleepTime");
+        long even      = (long) parameters.get("even");
+        long odd       = (long) parameters.get("odd");
+
+        if(gWrite.V().has("id",personID).hasNext()) {
+            Vertex currentVertex = gWrite.V().has("id", personID).next();
+            currentVertex.property("version", even);
+            sleep(sleepTime);
+            currentVertex.property("version", odd);
+            abortTransaction(transaction);
+            return ImmutableMap.of();
+        }
+        else
+            throw new IllegalStateException("G1A1 Person Missing from Graph");
+    }
+
+    @Override
+    public Map<String, Object> g1b2(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource gWrite = transaction.traversal();
+        long personID = (long) parameters.get("personId");
+        if(gWrite.V().has("id",personID).hasNext()) {
+            Vertex currentVertex = gWrite.V().has("id", personID).next();
+            int pVersion = currentVertex.value("version");
+            return ImmutableMap.of("pVersion", (long) pVersion);
+        }
+        else
+            throw new IllegalStateException("G2A2 Person Missing from Graph");
+    }
+
+
 
 
     @Override
@@ -146,10 +196,7 @@ public class JanusGraphDriver extends TestDriver {
 
 
 
-    @Override
-    public void g1bInit() {
 
-    }
 
     @Override
     public void g1cInit() {
@@ -234,16 +281,6 @@ public class JanusGraphDriver extends TestDriver {
 
     @Override
     public Map<String, Object> pmp1(Map parameters) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> g1b2(Map parameters) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> g1b1(Map parameters) {
         return null;
     }
 
