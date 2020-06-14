@@ -60,7 +60,7 @@ public class JanusGraphDriver extends TestDriver {
         Vertex v = g.addV().next();
         v.property("id",1L);
         v.property("version",1L);
-        transaction.commit();
+        commitTransaction(transaction);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class JanusGraphDriver extends TestDriver {
         Vertex v = g.addV().next();
         v.property("id",1L);
         v.property("version",99L);
-        transaction.commit();
+        commitTransaction(transaction);
     }
 
     @Override
@@ -155,7 +155,7 @@ public class JanusGraphDriver extends TestDriver {
         Vertex v2 = g.addV().next();
         v2.property("id",2L);
         v2.property("version",0L);
-        transaction.commit();
+        commitTransaction(transaction);
     }
 
 
@@ -190,7 +190,7 @@ public class JanusGraphDriver extends TestDriver {
         Vertex v = g.addV().next();
         v.property("id",1L);
         v.property("version",1L);
-        transaction.commit();
+        commitTransaction(transaction);
     }
 
     @Override
@@ -227,6 +227,57 @@ public class JanusGraphDriver extends TestDriver {
 
 
     @Override
+    public void pmpInit() {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        Vertex person = g.addV("Person").next();
+        person.property("id",1L);
+        Vertex post = g.addV("Post").next();
+        post.property("id",1L);
+        commitTransaction(transaction);
+    }
+
+    @Override
+    public Map<String, Object> pmp1(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        long personID  = (long) parameters.get("personId");
+        long postID    = (long) parameters.get("postId");
+
+        if(g.V().hasLabel("Person").has("id",personID).hasNext() &&
+           g.V().hasLabel("Post").has("id",postID).hasNext()) {
+
+            Vertex person = g.V().hasLabel("Person").has("id",personID).next();
+            Vertex post =  g.V().hasLabel("Post").has("id",postID).next();
+            person.addEdge("Likes",post);
+            commitTransaction(transaction);
+            return ImmutableMap.of();
+        }
+        else
+            throw new IllegalStateException("PMP1 Person or Post  Missing from Graph");
+    }
+
+    @Override
+    public Map<String, Object> pmp2(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        long postID       = (long) parameters.get("postId");
+        long sleepTime    = (long) parameters.get("sleepTime");
+        if(g.V().hasLabel("Post").has("id",postID).hasNext()){
+            long firstRead = g.V().hasLabel("Post").has("id", postID).inE("Likes").count().next();
+            sleep(sleepTime);
+            long secondRead = g.V().hasLabel("Post").has("id", postID).inE("Likes").count().next();
+            commitTransaction(transaction);
+            return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+        }
+        else
+            throw new IllegalStateException("PMP2 Person or Post Missing from Graph");
+    }
+
+
+
+
+    @Override
     public void g0Init() {
 
     }
@@ -236,10 +287,7 @@ public class JanusGraphDriver extends TestDriver {
         return null;
     }
 
-    @Override
-    public void pmpInit() {
 
-    }
 
     @Override
     public void otvInit() {
@@ -301,15 +349,7 @@ public class JanusGraphDriver extends TestDriver {
         return null;
     }
 
-    @Override
-    public Map<String, Object> pmp2(Map parameters) {
-        return null;
-    }
 
-    @Override
-    public Map<String, Object> pmp1(Map parameters) {
-        return null;
-    }
 
 
 
