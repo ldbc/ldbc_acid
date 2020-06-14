@@ -93,12 +93,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, String>, 
     }
 
     @Override
-    public Map<String, Object> g1c1(Map<String, Object> parameters) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> g1c2(Map<String, Object> parameters) {
+    public Map<String, Object> g1c(Map<String, Object> parameters) {
         return null;
     }
 
