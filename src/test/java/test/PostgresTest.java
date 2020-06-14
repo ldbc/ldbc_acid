@@ -1,11 +1,15 @@
 package test;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import postgres.PostgresDriver;
 import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres;
+import ru.yandex.qatools.embed.postgresql.config.PostgresConfig;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Optional;
 
 import static ru.yandex.qatools.embed.postgresql.distribution.Version.Main.*;
 
@@ -17,10 +21,18 @@ public class PostgresTest extends AcidTest<PostgresDriver> {
         super(new PostgresDriver());
     }
 
+    @Override
+    public void initialize() {
+        PostgresConfig c = postgres.getConfig().get();
+        testDriver.initDataSource(c.net().host(), c.net().port(), c.credentials().username(), c.credentials().password(), c.storage().dbName());
+
+        super.initialize();
+    }
+
     @BeforeClass
     public static void setUp() throws IOException {
         postgres = new EmbeddedPostgres(V9_6);
-        final String url = postgres.start("localhost", 5432, "dbName", "userName", "password");
+        final String url = postgres.start();
         // TODO
     }
 
