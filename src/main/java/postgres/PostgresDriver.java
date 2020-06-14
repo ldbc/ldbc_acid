@@ -58,6 +58,11 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, String>, 
     }
 
     @Override
+    public Map<String, Object> g0check(Map<String, Object> parameters) {
+        return null;
+    }
+
+    @Override
     public void g1aInit() {
 
     }

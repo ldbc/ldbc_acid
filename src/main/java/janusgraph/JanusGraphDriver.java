@@ -232,6 +232,11 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
+    public Map<String, Object> g0check(Map parameters) {
+        return null;
+    }
+
+    @Override
     public void pmpInit() {
 
     }

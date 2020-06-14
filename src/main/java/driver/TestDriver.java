@@ -28,6 +28,7 @@ public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> 
 
     public abstract Map<String, Object> g0(Map<String, Object> parameters);
 
+    public abstract Map<String, Object> g0check(Map<String, Object> parameters);
 
     // G1a Intermediate Reads
 

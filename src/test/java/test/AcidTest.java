@@ -47,6 +47,35 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     }
 
     @Test
+    public void g0Test() throws Exception {
+        testDriver.g0Init();
+        final int uc = 5;
+
+        List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
+        for (int i = 1; i <= uc; i++) {
+            clients.add(new TransactionThread<>(i, testDriver::g0, ImmutableMap.of("person1Id", 1L, "person2Id", 2L, "transactionId", i)));
+        }
+
+        final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        for (Future<Map<String, Object>> future : futures) {
+            future.get();
+        }
+
+        Map<String, Object> results = testDriver.g0check(ImmutableMap.of("person1Id", 1L, "person2Id", 2L));
+        if (results.containsKey("p1VersionHistory")) {
+            final List<Long> p1VersionHistory = (List<Long>) results.get("p1VersionHistory");
+            final List<Long> kVersionHistory  = (List<Long>) results.get("kVersionHistory" );
+            final List<Long> p2VersionHistory = (List<Long>) results.get("p2VersionHistory");
+
+            System.out.printf("G0:    %s %s %s %5b %5b %5b\n",
+                    p1VersionHistory, kVersionHistory, p2VersionHistory,
+                    p1VersionHistory.equals(kVersionHistory),
+                    p1VersionHistory.equals(p2VersionHistory),
+                    kVersionHistory.equals(p1VersionHistory));
+        }
+    }
+
+    @Test
     public void g1aTest() throws Exception {
         testDriver.g1aInit();
         final int uc = 5;

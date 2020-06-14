@@ -54,12 +54,39 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
 
     @Override
     public void g0Init() {
-
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (:Person {id: 1, versionHistory: [0]})-[:KNOWS {versionHistory: [0]}]->(:Person {id: 2, versionHistory: [0]})");
+        tt.commit();
     }
 
     @Override
     public Map<String, Object> g0(Map<String, Object> parameters) {
-        return null;
+        final Transaction tt = startTransaction();
+
+        tt.run("MATCH (p1:Person {id: $person1Id})-[k:KNOWS]->(p2:Person {id: $person2Id})\n" +
+                "SET p1.versionHistory = p1.versionHistory + [$transactionId]\n" +
+                "SET p2.versionHistory = p2.versionHistory + [$transactionId]\n" +
+                "SET k.versionHistory  = k.versionHistory  + [$transactionId]", parameters);
+        commitTransaction(tt);
+
+        return ImmutableMap.of();
+    }
+
+    @Override
+    public Map<String, Object> g0check(Map<String, Object> parameters) {
+        final Transaction tt = startTransaction();
+
+        Result result = tt.run("MATCH (p1:Person {id: $person1Id})-[k:KNOWS]->(p2:Person {id: $person2Id})\n" +
+                "RETURN\n" +
+                "  p1.versionHistory AS p1VersionHistory,\n" +
+                "  k.versionHistory  AS kVersionHistory,\n" +
+                "  p2.versionHistory AS p2VersionHistory", parameters);
+        Record record = result.next();
+        final List<Object> p1VersionHistory = record.get("p1VersionHistory").asList();
+        final List<Object> kVersionHistory  = record.get("kVersionHistory" ).asList();
+        final List<Object> p2VersionHistory = record.get("p2VersionHistory").asList();
+
+        return ImmutableMap.of("p1VersionHistory", p1VersionHistory, "kVersionHistory", kVersionHistory, "p2VersionHistory", p2VersionHistory);
     }
 
     @Override
