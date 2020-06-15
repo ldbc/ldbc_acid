@@ -6,6 +6,7 @@ import org.postgresql.ds.PGConnectionPoolDataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
 
 public class PostgresDriver extends TestDriver<Connection, Map<String, String>, ResultSet> {
@@ -13,13 +14,24 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, String>, 
     protected PGConnectionPoolDataSource ds;
 
     public PostgresDriver() {
-        String endPoint = "TODO";
+    }
 
+    public void initDataSource(String host, int port, String username, String password, String dbName) {
         ds = new PGConnectionPoolDataSource();
-        ds.setDatabaseName("TODO");
-        ds.setServerName(endPoint);
-        ds.setUser("TODO");
-        ds.setPassword("TODO");
+        ds.setDefaultAutoCommit(false);
+        ds.setDatabaseName(dbName);
+        ds.setServerName(host);
+        ds.setPortNumber(port);
+        ds.setUser(username);
+        ds.setPassword(password);
+    }
+
+    public String getPGVersion() throws SQLException {
+        Connection conn = ds.getConnection();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("select version()");
+        rs.next();
+        return rs.getString(1);
     }
 
     @Override
