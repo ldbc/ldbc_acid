@@ -10,10 +10,7 @@ import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.*;
 
@@ -451,10 +448,11 @@ public class JanusGraphDriver extends TestDriver {
 
     @Override
     public Map<String, Object> otv1(Map parameters) {
+        Random random = new Random();
         for (int i = 0; i < 100; i++) {
             JanusGraphTransaction transaction = startTransaction();
             GraphTraversalSource g = transaction.traversal();
-            long personId    = (long) parameters.get("cycleSize");
+            long personId    = random.nextInt((int) parameters.get("cycleSize"))+1;
             if (g.V().hasLabel("Person").has("id", personId).hasNext()) {
                     Vertex startNode = g.V().hasLabel("Person").has("id", personId).next();
                     List<Vertex> vertices = g.V(startNode).repeat(outE().inV()).emit().times(4).next(4);
@@ -473,7 +471,7 @@ public class JanusGraphDriver extends TestDriver {
     public Map<String, Object> otv2(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
-        long personId    = (long) parameters.get("personId");
+        long personId    = (int) parameters.get("personId");
         if (g.V().hasLabel("Person").has("id", personId).hasNext()) {
             Vertex startNode = g.V().hasLabel("Person").has("id", personId).next();
             List<Vertex> vertices1 = g.V(startNode).repeat(outE().inV()).emit().times(4).next(4);

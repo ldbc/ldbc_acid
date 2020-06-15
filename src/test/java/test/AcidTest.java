@@ -289,9 +289,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         final int rc = 50;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
-        clients.add(new TransactionThread<>(0, testDriver::otv1, ImmutableMap.of("personId", 1L)));
+        clients.add(new TransactionThread<>(0, testDriver::otv1, ImmutableMap.of("cycleSize", 4)));
+        Random random = new Random();
         for (int i = 0; i < rc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::otv2, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
+            clients.add(new TransactionThread<>(i, testDriver::otv2, ImmutableMap.of("personId", random.nextInt(4)+1, "sleepTime", 250L)));
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
