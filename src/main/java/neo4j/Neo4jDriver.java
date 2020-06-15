@@ -211,7 +211,7 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
     }
 
     @Override
-    public Map<String, Object> g1c(Map<String, Object> parameters) { // TODO: just g1c should suffice
+    public Map<String, Object> g1c(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         Result result = tt.run("MATCH (p1:Person {id: $person1Id})\n" +
