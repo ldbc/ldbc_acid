@@ -2,7 +2,6 @@ package janusgraph;
 
 import com.google.common.collect.ImmutableMap;
 import driver.TestDriver;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -11,7 +10,10 @@ import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.*;
 
@@ -51,6 +53,26 @@ public class JanusGraphDriver extends TestDriver {
 
         close();//restart connection
         graph = JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
+
+    }
+
+    @Override
+    public void atomicityInit() {
+
+    }
+
+    @Override
+    public Map<String, Object> atomicityCheck() {
+        return null;
+    }
+
+    @Override
+    public void atomicityRB(Map parameters) {
+
+    }
+
+    @Override
+    public void atomicityC(Map parameters) {
 
     }
 

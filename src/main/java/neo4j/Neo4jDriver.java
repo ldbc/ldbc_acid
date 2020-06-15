@@ -54,6 +54,56 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
     }
 
     @Override
+    public void atomicityInit() {
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (:Person {id: 1, name: 'Alice', emails: ['alice@aol.com']}),\n" +
+                " (:Person {id: 2, name: 'Bob', emails: ['bob@hotmail.com', 'bobby@yahoo.com']})");
+        tt.commit();
+    }
+
+    @Override
+    public void atomicityC(Map<String, Object> parameters) {
+        final Transaction tt = startTransaction();
+
+        tt.run("MATCH (p1:Person {id: $person1Id})\n" +
+                "CREATE (p2:Person)\n" +
+                "CREATE (p1)-[k:KNOWS]->(p2)\n" +
+                "SET\n" +
+                "  p1.emails = p1.emails + [$newEmail],\n" +
+                "  p2.id = $person2Id,\n" +
+                "  k.since = $since", parameters);
+        commitTransaction(tt);
+    }
+
+    @Override
+    public void atomicityRB(Map<String, Object> parameters) {
+        final Transaction tt = startTransaction();
+
+        tt.run("MATCH (p1:Person {id: $person1Id}) SET p1.emails = p1.emails + [$newEmail]", parameters);
+        final Result result = tt.run("MATCH (p2:Person {id: $person2Id}) RETURN p2", parameters);
+        if (result.hasNext()) {
+            abortTransaction(tt);
+        } else {
+            tt.run("CREATE (p2:Person {id: $person2Id, emails: []})", parameters);
+            commitTransaction(tt);
+        }
+    }
+
+    @Override
+    public Map<String, Object> atomicityCheck() {
+        final Transaction tt = startTransaction();
+
+        Result result = tt.run("MATCH (p:Person)\n" +
+                "RETURN count(p) AS numPersons, count(p.name) AS numNames, sum(size(p.emails)) AS numEmails");
+        Record record = result.next();
+        final long numPersons = record.get("numPersons").asLong();
+        final long numNames = record.get("numNames").asLong();
+        final long numEmails = record.get("numEmails").asLong();
+
+        return ImmutableMap.of("numPersons", numPersons, "numNames", numNames, "numEmails", numEmails);
+    }
+
+    @Override
     public void g0Init() {
         final Transaction tt = startTransaction();
         tt.run("CREATE (:Person {id: 1, versionHistory: [0]})-[:KNOWS {versionHistory: [0]}]->(:Person {id: 2, versionHistory: [0]})");
@@ -162,7 +212,7 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
     }
 
     @Override
-    public Map<String, Object> g1c(Map<String, Object> parameters) { // TODO: just g1c should suffice
+    public Map<String, Object> g1c(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         Result result = tt.run("MATCH (p1:Person {id: $person1Id})\n" +
@@ -360,18 +410,51 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
 
     @Override
     public void wsInit() {
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (:Person {id: 1})");
+        tt.run("CREATE (:Person {id: 2})");
+        tt.run("CREATE (:Person {id: 3})");
+        tt.run("CREATE (:Person {id: 4})");
 
+        tt.run("CREATE (:Forum {id: 1})");
+        tt.run("CREATE (:Forum {id: 2})");
+        tt.run("CREATE (:Forum {id: 3})");
+        tt.commit();
     }
 
     @Override
     public Map<String, Object> ws1(Map<String, Object> parameters) {
-        return null;
+        final Transaction tt = startTransaction();
+
+        tt.run("MATCH (f:Forum {id: $forumId}),\n" +
+                "  (p:Person {id: $personId})\n" +
+                "OPTIONAL MATCH (f)-[:HAS_MODERATOR]->(p)\n" +
+                "WITH f, p\n" +
+                "WHERE p IS NULL\n" +
+                "CALL apoc.util.sleep($sleepTime)\n" +
+                "CREATE (f)-[:HAS_MODERATOR]->(p)", parameters);
+        commitTransaction(tt);
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> ws2(Map<String, Object> parameters) {
-        return null;
-    }
+        final Transaction tt = startTransaction();
+        final Result result = tt.run("MATCH (f:Forum)-[:HAS_MODERATOR]->(p:Person)\n" +
+                "WITH f, count(p) AS modCount\n" +
+                "WHERE modCount > 1\n" +
+                "RETURN\n" +
+                "  f.id AS forumId,\n" +
+                "  modCount");
 
+        if (result.hasNext()) {
+            final Record record = result.next();
+            final long forumId = record.get("forumId").asLong();
+            final long modCount = record.get("modCount").asLong();
+            return ImmutableMap.of("forumId", forumId, "modCount", modCount);
+        } else {
+            return ImmutableMap.of();
+        }
+    }
 
 }

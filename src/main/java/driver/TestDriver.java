@@ -22,6 +22,16 @@ public abstract class TestDriver<TestTransaction, QueryParameters, QueryResult> 
 
     public abstract void nukeDatabase();
 
+    // Atomicity tests
+
+    public abstract void atomicityInit();
+
+    public abstract void atomicityC(Map<String, Object> parameters);
+
+    public abstract void atomicityRB(Map<String, Object> parameters);
+
+    public abstract Map<String, Object> atomicityCheck();
+
     // G0 Dirty Write
 
     public abstract void g0Init();
