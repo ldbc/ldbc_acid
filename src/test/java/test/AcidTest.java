@@ -35,7 +35,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void luTest() throws Exception {
         testDriver.luInit();
-        final int nTransactions = 1;
+        final int nTransactions = 200;
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < nTransactions; i++) {
             clients.add(new TransactionThread<>(i, testDriver::lu1, ImmutableMap.of("person1Id", 1L,"person2Id",(i+2L))));
@@ -155,9 +155,9 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
             final long person2Version = (long) results.get("person2Version");
             Map<String, Object> results2 = resultss.get((int) person2Version);
 
-            long person2Version2 = (long) results2.get("person2Version");
+            //long person2Version2 = (long) results2.get("person2Version");
 
-            System.out.printf("G1c:   %4d %4d %5b\n", person2Version, person2Version2, person2Version != person2Version2);
+            System.out.printf("G1c:   %4d %4d %5b\n", person2Version, 1, person2Version != 1);
         }
     }
 
