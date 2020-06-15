@@ -35,12 +35,13 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void luTest() throws Exception {
         testDriver.luInit();
-        final int nTransactions = 200;
+        final int nTransactions = 1;
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < nTransactions; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::lu1, ImmutableMap.of("person1Id", 1L,"person2Id",(i+2))));
+            clients.add(new TransactionThread<>(i, testDriver::lu1, ImmutableMap.of("person1Id", 1L,"person2Id",(i+2L))));
         }
-        executorService.invokeAll(clients);
+        final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        for (Future<Map<String, Object>> future : futures) {future.get();}
         Map<String, Object> results = testDriver.lu2(ImmutableMap.of("personId", 1L));
         final long numFriendsProp = (long) results.get("numFriendsProp");
         final long numKnowsEdges = (long) results.get("numKnowsEdges");
@@ -151,10 +152,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
             long transactionId = clients.get(i).getTransactionId();
             Map<String, Object> results = resultss.get(i);
 
-            final int person2Version = (int) results.get("person2Version");
-            Map<String, Object> results2 = resultss.get(person2Version);
+            final long person2Version = (long) results.get("person2Version");
+            Map<String, Object> results2 = resultss.get((int) person2Version);
 
-            int person2Version2 = (int) results2.get("person2Version");
+            long person2Version2 = (long) results2.get("person2Version");
 
             System.out.printf("G1c:   %4d %4d %5b\n", person2Version, person2Version2, person2Version != person2Version2);
         }

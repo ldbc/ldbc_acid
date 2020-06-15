@@ -169,7 +169,7 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
                 "WITH count(*) AS dummy\n" +
                 "MATCH (p2:Person {id: $person2Id})\n" +
                 "RETURN p2.version AS person2Version\n", parameters);
-        final int person2Version = result.next().get("person2Version").asInt();
+        final long person2Version = result.next().get("person2Version").asLong();
         tt.commit();
 
         return ImmutableMap.of("person2Version", person2Version);

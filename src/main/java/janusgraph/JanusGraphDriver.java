@@ -71,7 +71,7 @@ public class JanusGraphDriver extends TestDriver {
         long sleepTime = (long) parameters.get("sleepTime");
         if(g.V().has("id",personID).hasNext()) {
             Vertex person = g.V().has("id", personID).next();
-            int currentVersion = person.value("version");
+            long currentVersion = person.value("version");
             sleep(sleepTime);
             person.property("version", currentVersion + 1L);
             sleep(sleepTime);
@@ -89,7 +89,7 @@ public class JanusGraphDriver extends TestDriver {
         long personID = (long) parameters.get("personId");
         if(g.V().has("id",personID).hasNext()) {
             Vertex person = g.V().has("id", personID).next();
-            int pVersion = person.value("version");
+            long pVersion = person.value("version");
             return ImmutableMap.of("pVersion", (long) pVersion);
         }
         else
@@ -137,7 +137,7 @@ public class JanusGraphDriver extends TestDriver {
         long personID = (long) parameters.get("personId");
         if(g.V().has("id",personID).hasNext()) {
             Vertex person = g.V().has("id", personID).next();
-            int pVersion = person.value("version");
+            long pVersion = person.value("version");
             return ImmutableMap.of("pVersion", (long) pVersion);
         }
         else
@@ -172,7 +172,7 @@ public class JanusGraphDriver extends TestDriver {
             Vertex person1 = g.V().has("id", person1ID).next();
             person1.property("version", transactionId);
             Vertex person2 = g.V().has("id", person2ID).next();
-            int person2Version = person2.value("version");
+            long person2Version = person2.value("version");
             commitTransaction(transaction);
             return ImmutableMap.of("person2Version", person2Version);
         }
@@ -202,7 +202,7 @@ public class JanusGraphDriver extends TestDriver {
 
         if(g.V().has("id",personID).hasNext()) {
             Vertex person = g.V().has("id", personID).next();
-            int currentVersion = person.value("version");
+            long currentVersion = person.value("version");
             person.property("version", currentVersion + 1L);
             commitTransaction(transaction);
             return ImmutableMap.of();
@@ -218,11 +218,11 @@ public class JanusGraphDriver extends TestDriver {
         GraphTraversalSource g = transaction.traversal();
         long personID  = (long) parameters.get("personId");
         long sleepTime = (long) parameters.get("sleepTime");
-        int firstRead =  g.V().has("id",personID).next().value("version");
+        long firstRead = (long) g.V().has("id",personID).next().value("version");
         sleep(sleepTime);
-        int secondRead = g.V().has("id",personID).next().value("version");
+        long secondRead = g.V().has("id",personID).next().value("version");
 
-        return ImmutableMap.of("firstRead", (long) firstRead, "secondRead", (long) secondRead);
+        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
     }
 
 
@@ -290,13 +290,18 @@ public class JanusGraphDriver extends TestDriver {
     public Map<String, Object>  lu1(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
-        if(g.V().hasLabel("Person").has("id",1).hasNext()){
-            Vertex firstPerson  = g.V().hasLabel("Person").has("id", 1).next();
+        long person1Id    = (long) parameters.get("person1Id");
+        long person2Id    = (long) parameters.get("person2Id");
+        if(g.V().hasLabel("Person").has("id",person1Id).hasNext()){
+            Vertex firstPerson  = g.V().hasLabel("Person").has("id", person1Id).next();
             Vertex secondPerson = g.addV("Person").next();
-            secondPerson.property("id",2L);
-            firstPerson.addEdge("Likes",secondPerson);
+            secondPerson.property("id",person2Id);
+            firstPerson.addEdge("Knows",secondPerson);
+            long currentFriendCount = firstPerson.value("numFriends");
+            firstPerson.property("numFriends",currentFriendCount+1);
             commitTransaction(transaction);
-            return null;
+            return ImmutableMap.of();
+
         }
         else
             throw new IllegalStateException("LU1 Person Missing from Graph");
@@ -307,11 +312,18 @@ public class JanusGraphDriver extends TestDriver {
     public Map<String, Object> lu2(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
-        if((g.V().hasLabel("Person").has("id",1).hasNext()) &&
-           (g.V().hasLabel("Person").has("id",2).hasNext())){
+        long personId    = (long) parameters.get("personId");
 
+        if(g.V().hasLabel("Person").has("id",personId).hasNext()){
+            System.out.println(g.V().count().value());
+            long numKnowsEdges = g.V().hasLabel("Person").has("id", personId).outE("Knows").count().next();
+            long numFriends = g.V().hasLabel("Person").has("id", personId).next().value("numFriends");
+            commitTransaction(transaction);
+            return ImmutableMap.of("numKnowsEdges", (long) numKnowsEdges, "numFriendsProp", (long) numFriends);
         }
-        return null;
+        else
+            throw new IllegalStateException("LU2 Person Missing from Graph");
+
     }
 
 
