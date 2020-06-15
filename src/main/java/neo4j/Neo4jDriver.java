@@ -408,18 +408,51 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
 
     @Override
     public void wsInit() {
+        final Transaction tt = startTransaction();
+        tt.run("CREATE (:Person {id: 1})");
+        tt.run("CREATE (:Person {id: 2})");
+        tt.run("CREATE (:Person {id: 3})");
+        tt.run("CREATE (:Person {id: 4})");
 
+        tt.run("CREATE (:Forum {id: 1})");
+        tt.run("CREATE (:Forum {id: 2})");
+        tt.run("CREATE (:Forum {id: 3})");
+        tt.commit();
     }
 
     @Override
     public Map<String, Object> ws1(Map<String, Object> parameters) {
-        return null;
+        final Transaction tt = startTransaction();
+
+        tt.run("MATCH (f:Forum {id: $forumId}),\n" +
+                "  (p:Person {id: $personId})\n" +
+                "OPTIONAL MATCH (f)-[:HAS_MODERATOR]->(p)\n" +
+                "WITH f, p\n" +
+                "WHERE p IS NULL\n" +
+                "CALL apoc.util.sleep($sleepTime)\n" +
+                "CREATE (f)-[:HAS_MODERATOR]->(p)", parameters);
+        commitTransaction(tt);
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> ws2(Map<String, Object> parameters) {
-        return null;
-    }
+        final Transaction tt = startTransaction();
+        final Result result = tt.run("MATCH (f:Forum)-[:HAS_MODERATOR]->(p:Person)\n" +
+                "WITH f, count(p) AS modCount\n" +
+                "WHERE modCount > 1\n" +
+                "RETURN\n" +
+                "  f.id AS forumId,\n" +
+                "  modCount");
 
+        if (result.hasNext()) {
+            final Record record = result.next();
+            final long forumId = record.get("forumId").asLong();
+            final long modCount = record.get("modCount").asLong();
+            return ImmutableMap.of("forumId", forumId, "modCount", modCount);
+        } else {
+            return ImmutableMap.of();
+        }
+    }
 
 }

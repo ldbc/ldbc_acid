@@ -81,10 +81,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void g0Test() throws Exception {
         testDriver.g0Init();
-        final int uc = 5;
+        final int wc = 5;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
-        for (int i = 1; i <= uc; i++) {
+        for (int i = 1; i <= wc; i++) {
             clients.add(new TransactionThread<>(i, testDriver::g0, ImmutableMap.of("person1Id", 1L, "person2Id", 2L, "transactionId", i)));
         }
 
@@ -122,11 +122,11 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void g1aTest() throws Exception {
         testDriver.g1aInit();
-        final int uc = 5;
+        final int wc = 5;
         final int rc = 5;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
-        for (int i = 0; i < uc; i++) {
+        for (int i = 0; i < wc; i++) {
             clients.add(new TransactionThread<>(i, testDriver::g1a1, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
         }
         for (int i = 0; i < rc; i++) {
@@ -148,11 +148,11 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void g1bTest() throws Exception {
         testDriver.g1bInit();
-        final int uc = 1;
+        final int wc = 1;
         final int rc = 100;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
-        for (int i = 0; i < uc; i++) {
+        for (int i = 0; i < wc; i++) {
             clients.add(new TransactionThread<>(i, testDriver::g1b1, ImmutableMap.of("personId", 1L, "even", 0L, "odd", 1L, "sleepTime", 1L)));
         }
         for (int i = 0; i < rc; i++) {
@@ -208,11 +208,11 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void impTest() throws Exception {
         testDriver.impInit();
-        final int uc = 1;
+        final int wc = 1;
         final int rc = 1;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
-        for (int i = 0; i < uc; i++) {
+        for (int i = 0; i < wc; i++) {
             clients.add(new TransactionThread<>(i, testDriver::imp1, ImmutableMap.of("personId", 1L)));
         }
         for (int i = 0; i < rc; i++) {
@@ -234,11 +234,11 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void pmpTest() throws Exception {
         testDriver.pmpInit();
-        final int uc = 1;
+        final int wc = 1;
         final int rc = 1;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
-        for (int i = 0; i < uc; i++) {
+        for (int i = 0; i < wc; i++) {
             clients.add(new TransactionThread<>(i, testDriver::pmp1, ImmutableMap.of("personId", 1L, "postId", 1L)));
         }
         for (int i = 0; i < rc; i++) {
@@ -260,11 +260,11 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void frTest() throws Exception {
         testDriver.frInit();
-        final int uc = 1;
+        final int wc = 1;
         final int rc = 100;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
-        for (int i = 0; i < uc; i++) {
+        for (int i = 0; i < wc; i++) {
             clients.add(new TransactionThread<>(i, testDriver::fr1, ImmutableMap.of("personId", 1L)));
         }
         for (int i = 0; i < rc; i++) {
@@ -305,6 +305,32 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 Assert.assertTrue(Collections.max(firstRead) <= Collections.min(secondRead));
             }
         }
+    }
+
+    @Test
+    public void wsTest() throws Exception {
+        testDriver.wsInit();
+        final int wc = 10;
+
+        List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
+        Random random = new Random();
+        long numPersons = 4;
+        long numForums = 3;
+        for (int i = 0; i < wc; i++) {
+            long forumId = random.nextLong() % numForums;
+            long personId = random.nextLong() % numPersons;
+            clients.add(new TransactionThread<>(i, testDriver::ws1, ImmutableMap.of("forumId", forumId, "personId", personId, "sleepTime", 250L)));
+        }
+
+        final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        for (Future<Map<String, Object>> future : futures) {
+            future.get();
+        }
+
+        Map<String, Object> results = testDriver.ws2(ImmutableMap.of());
+        System.out.println(results);
+
+        Assert.assertTrue(results.isEmpty());
     }
 
     @After
