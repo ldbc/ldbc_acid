@@ -60,6 +60,26 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, String>, 
     }
 
     @Override
+    public void atomicityInit() {
+
+    }
+
+    @Override
+    public void atomicityC(Map<String, Object> parameters) {
+
+    }
+
+    @Override
+    public void atomicityRB(Map<String, Object> parameters) {
+
+    }
+
+    @Override
+    public Map<String, Object> atomicityCheck() {
+        return null;
+    }
+
+    @Override
     public void g0Init() {
 
     }

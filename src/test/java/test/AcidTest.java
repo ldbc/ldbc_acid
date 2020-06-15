@@ -2,6 +2,7 @@ package test;
 
 import com.google.common.collect.ImmutableMap;
 import driver.TestDriver;
+import org.junit.Assert;
 import transactions.TransactionThread;
 import org.junit.After;
 import org.junit.Before;
@@ -30,6 +31,30 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Before
     public void initialize() {
         testDriver.nukeDatabase();
+    }
+
+    @Test
+    public void atomicityCTest() throws Exception {
+        testDriver.atomicityInit();
+
+        testDriver.atomicityC(ImmutableMap.of("person1Id", 1L, "person2Id", 3L, "newEmail", "alice@otherdomain.net", "since", 2020));
+
+        final Map<String, Object> results = testDriver.atomicityCheck();
+        Assert.assertEquals(3, (long) results.get("numPersons"));
+        Assert.assertEquals(2, (long) results.get("numNames"));
+        Assert.assertEquals(4, (long) results.get("numEmails"));
+    }
+
+    @Test
+    public void atomicityRbTest() throws Exception {
+        testDriver.atomicityInit();
+
+        testDriver.atomicityRB(ImmutableMap.of("person1Id", 1L, "person2Id", 2L, "newEmail", "alice@otherdomain.net", "since", 2020));
+
+        final Map<String, Object> results = testDriver.atomicityCheck();
+        Assert.assertEquals(2, (long) results.get("numPersons"));
+        Assert.assertEquals(2, (long) results.get("numNames"));
+        Assert.assertEquals(3, (long) results.get("numEmails"));
     }
 
     @Test
