@@ -2,13 +2,16 @@ package janusgraph;
 
 import com.google.common.collect.ImmutableMap;
 import driver.TestDriver;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
+import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
 
-import java.util.Map;
+import java.util.*;
 
 public class JanusGraphDriver extends TestDriver {
 
@@ -49,9 +52,81 @@ public class JanusGraphDriver extends TestDriver {
 
     }
 
+    //****** G0 BLOCK ******//
+
+    @Override
+    public void g0Init() {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        long[] version = {0L};
+        Vertex person1 = g.addV("Person").next();
+        person1.property("id",1L);
+        person1.property("versionHistory", Arrays.copyOf(version,1));
+        Vertex person2 = g.addV("Person").next();
+        person2.property("id",2L);
+        person2.property("versionHistory", Arrays.copyOf(version,1));
+        Edge kEdge = person1.addEdge("Knows",person2);
+        kEdge.property("versionHistory", Arrays.copyOf(version,1));
+        commitTransaction(transaction);
+    }
+
+    @Override
+    public Map<String, Object> g0(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        long person1ID       = (long) parameters.get("person1Id");
+        long person2ID       = (long) parameters.get("person2Id");
+        long trans           = (int)  parameters.get("transactionId");
+        long[] transactionID = {trans};
+        if(g.V().has("id",person1ID).hasNext()) {
+            Vertex person1 = g.V().hasLabel("Person").has("id",person1ID).next();
+            long[] versionHistoryP1 = person1.value("versionHistory");
+            person1.property("versionHistory", ArrayUtils.addAll(versionHistoryP1, transactionID));
+            Vertex person2 = g.V().hasLabel("Person").has("id",person2ID).next();
+            long[] versionHistoryP2 = person2.value("versionHistory");
+            person2.property("versionHistory", ArrayUtils.addAll(versionHistoryP2, transactionID));
+            Edge   kEdge   = g.V().hasLabel("Person").has("id",person1ID).outE("Knows").next();
+            long[] versionHistoryK = kEdge.value("versionHistory");
+            kEdge.property("versionHistory", ArrayUtils.addAll(versionHistoryK, transactionID));
+            transaction.commit();
+            return ImmutableMap.of();
+        }
+        else
+            throw new IllegalStateException("G0 Person Missing from Graph");
+    }
+
+    @Override
+    public Map<String, Object> g0check(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        long person1ID       = (long) parameters.get("person1Id");
+        long person2ID       = (long) parameters.get("person2Id");
+        if(g.V().has("id",person1ID).hasNext()) {
+            Vertex person1 = g.V().hasLabel("Person").has("id",person1ID).next();
+            long[] versionHistoryP1 = person1.value("versionHistory");
+            Vertex person2 = g.V().hasLabel("Person").has("id",person2ID).next();
+            long[] versionHistoryP2 = person2.value("versionHistory");
+            Edge   kEdge   = g.V().hasLabel("Person").has("id",person1ID).outE("Knows").next();
+            long[] versionHistoryK = kEdge.value("versionHistory");
+            transaction.commit();
+
+            final List<Long> p1VersionHistory = new ArrayList<>();
+            for (long v : versionHistoryP1) p1VersionHistory.add(v);
+
+            final List<Long> p2VersionHistory = new ArrayList<>();
+            for (long v : versionHistoryP2) p2VersionHistory.add(v);
+
+            final List<Long> kVersionHistory = new ArrayList<>();
+            for (long v : versionHistoryK) kVersionHistory.add(v);
+
+            return ImmutableMap.of("p1VersionHistory", p1VersionHistory, "kVersionHistory", kVersionHistory, "p2VersionHistory", p2VersionHistory);
+        }
+        else
+            throw new IllegalStateException("G0 Person Missing from Graph");
+    }
 
 
-    //****** G1A BLOCK ******//
+
 
     @Override
     public void g1aInit() {
@@ -225,7 +300,7 @@ public class JanusGraphDriver extends TestDriver {
         return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
     }
 
-
+    //****** PMP BLOCK ******//
     @Override
     public void pmpInit() {
         JanusGraphTransaction transaction = startTransaction();
@@ -274,6 +349,8 @@ public class JanusGraphDriver extends TestDriver {
             throw new IllegalStateException("PMP2 Person or Post Missing from Graph");
     }
 
+    //****** LU BLOCK ******//
+
     @Override
     public void luInit() {
         JanusGraphTransaction transaction = startTransaction();
@@ -283,8 +360,6 @@ public class JanusGraphDriver extends TestDriver {
         person.property("numFriends",0L);
         commitTransaction(transaction);
     }
-
-
 
     @Override
     public Map<String, Object>  lu1(Map parameters) {
@@ -326,33 +401,40 @@ public class JanusGraphDriver extends TestDriver {
 
     }
 
-
-    @Override
-    public void g0Init() {
-
-    }
-
-    @Override
-    public Map<String, Object> g0check(Map parameters) {
-        return null;
-    }
-
-
-
+    //****** OTV BLOCK ******//
     @Override
     public void otvInit() {
 
     }
 
     @Override
+    public Map<String, Object> otv1(Map parameters) {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> otv2(Map parameters) {
+        return null;
+    }
+
+
+    //****** FR BLOCK ******//
+    @Override
     public void frInit() {
 
     }
 
+    @Override
+    public Map<String, Object> fr1(Map parameters) {
+        return null;
+    }
 
+    @Override
+    public Map<String, Object> fr2(Map parameters) {
+        return null;
+    }
 
-
-
+    //****** WS BLOCK ******//
     @Override
     public void wsInit() {
 
@@ -368,34 +450,6 @@ public class JanusGraphDriver extends TestDriver {
         return null;
     }
 
-    @Override
-    public Map<String, Object> fr2(Map parameters) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> fr1(Map parameters) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> otv2(Map parameters) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> otv1(Map parameters) {
-        return null;
-    }
-
-
-
-
-
-    @Override
-    public Map<String, Object> g0(Map parameters) {
-        return null;
-    }
 
 
     @Override
