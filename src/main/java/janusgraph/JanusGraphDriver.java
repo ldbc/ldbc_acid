@@ -13,6 +13,8 @@ import org.janusgraph.core.JanusGraphTransaction;
 
 import java.util.*;
 
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.*;
+
 public class JanusGraphDriver extends TestDriver {
 
     private JanusGraph graph = JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
@@ -404,17 +406,74 @@ public class JanusGraphDriver extends TestDriver {
     //****** OTV BLOCK ******//
     @Override
     public void otvInit() {
-
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        Vertex person1 = g.addV("Person").next();
+        Vertex person2 = g.addV("Person").next();
+        Vertex person3 = g.addV("Person").next();
+        Vertex person4 = g.addV("Person").next();
+        person1.property("id",1L);
+        person1.property("version",0L);
+        person2.property("id",2L);
+        person2.property("version",0L);;
+        person3.property("id",3L);
+        person3.property("version",0L);;
+        person4.property("id",4L);
+        person4.property("version",0L);
+        person1.addEdge("Knows",person2);
+        person2.addEdge("Knows",person3);
+        person3.addEdge("Knows",person4);
+        person4.addEdge("Knows",person1);
+        commitTransaction(transaction);
     }
 
     @Override
     public Map<String, Object> otv1(Map parameters) {
-        return null;
+        for (int i = 0; i < 100; i++) {
+            JanusGraphTransaction transaction = startTransaction();
+            GraphTraversalSource g = transaction.traversal();
+            long personId    = (long) parameters.get("cycleSize");
+            if (g.V().hasLabel("Person").has("id", personId).hasNext()) {
+                    Vertex startNode = g.V().hasLabel("Person").has("id", personId).next();
+                    List<Vertex> vertices = g.V(startNode).repeat(outE().inV()).emit().times(4).next(4);
+                    for (Vertex vertex : vertices) {
+                        vertex.property("version", ((long) vertex.value("version")) + 1L);
+                    }
+                }
+            else
+               throw new IllegalStateException("OTV1 Person Missing from Graph");
+            commitTransaction(transaction);
+        }
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> otv2(Map parameters) {
-        return null;
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        long personId    = (long) parameters.get("personId");
+        if (g.V().hasLabel("Person").has("id", personId).hasNext()) {
+            Vertex startNode = g.V().hasLabel("Person").has("id", personId).next();
+            List<Vertex> vertices1 = g.V(startNode).repeat(outE().inV()).emit().times(4).next(4);
+            final List<Object> firstRead = new ArrayList<>();
+            for (Vertex vertex : vertices1) {
+               firstRead.add(vertex.value("version"));
+            }
+
+            sleep((Long) parameters.get("sleepTime"));
+
+            startNode = g.V().hasLabel("Person").has("id", personId).next();
+            List<Vertex> vertices2 = g.V(startNode).repeat(outE().inV()).emit().times(4).next(4);
+            final List<Object> secondRead = new ArrayList<>();
+            for (Vertex vertex : vertices2) {
+                secondRead.add(vertex.value("version"));
+            }
+
+            return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+        }
+        else
+            throw new IllegalStateException("OTV1 Person Missing from Graph");
+
     }
 
 

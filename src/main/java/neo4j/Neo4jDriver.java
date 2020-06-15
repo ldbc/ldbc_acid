@@ -11,6 +11,7 @@ import org.neo4j.driver.Transaction;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Result> {
 
@@ -256,6 +257,7 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
     @Override
     public Map<String, Object> otv1(Map<String, Object> parameters) {
         for (int i = 0; i < 100; i++) {
+
             final Transaction tt = startTransaction();
             tt.run("MATCH path = (n:Person {id: $personId})-[:KNOWS*..4]->(n)\n" +
                 " UNWIND nodes(path)[0..4] AS person\n" +
@@ -269,7 +271,7 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, Re
     @Override
     public Map<String, Object> otv2(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
-
+        long personId    = new Random().nextInt((int) parameters.get("cycleSize")) ;
         final Result result1 = tt.run("MATCH path1 = (n1:Person {id: $personId})-[:KNOWS*..4]->(n1) RETURN [p IN nodes(path1) | p.version][0..4] AS firstRead", parameters);
         if (!result1.hasNext()) throw new IllegalStateException("OTV2 result1 empty");
         final List<Object> firstRead = result1.next().get("firstRead").asList();
