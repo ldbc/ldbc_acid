@@ -75,8 +75,10 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     public String substituteParameters(String querySpecification, Map<String, Object> stringStringMap) {
         // substitute parameters
-        for (Map.Entry<String, Object> param: stringStringMap.entrySet()) {
-            querySpecification = querySpecification.replace("$"+param.getKey(), param.getValue().toString());
+        if (stringStringMap != null) {
+            for (Map.Entry<String, Object> param : stringStringMap.entrySet()) {
+                querySpecification = querySpecification.replace("$" + param.getKey(), param.getValue().toString());
+            }
         }
         return querySpecification;
     }
@@ -119,12 +121,13 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public void atomicityInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.atomicityInit);
     }
 
     @Override
     public void atomicityC(Map<String, Object> parameters) {
-
+        executeUpdates(PostgresQueries.atomicityCTx, parameters, true);
     }
 
     @Override
@@ -134,7 +137,20 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public Map<String, Object> atomicityCheck() {
-        return null;
+        try (Connection conn = startTransaction()) {
+            ResultSet rs = runQuery(conn, PostgresQueries.atomicityCheck, null);
+            rs.next();
+
+            final long numPersons = rs.getLong(1);
+            final long numNames = rs.getLong(2);
+            final long numEmails = rs.getLong(3);
+
+            return ImmutableMap.of("numPersons", numPersons, "numNames", numNames, "numEmails", numEmails);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
