@@ -1,9 +1,7 @@
 apply plugin: 'java'
 
 ext {
-    neo4jVersion = '4.0.5'
-    neo4jDriverVersion = '4.0.1'
-    neo4jApocVersion = '4.0.0.14'
+    neo4jDriverVersion = '1.7.0'
     janusgraphVersion = '0.5.2'
     gremlinVersion = '3.4.6'
 }
@@ -19,12 +17,11 @@ repositories {
 }
 
 dependencies {
-    // Neo4j embedded and driver
-    compile group: 'org.neo4j', name: 'neo4j-bolt', version: neo4jVersion
-    compile group: 'org.neo4j.community', name: 'it-test-support', version: neo4jVersion
-    compile group: 'org.neo4j.driver', name: 'neo4j-java-driver', version: neo4jDriverVersion
-    compile group: 'org.neo4j.procedure', name: 'apoc', version: neo4jApocVersion
+    // util
     compile group: 'com.google.guava', name: 'guava', version: '29.0-jre'
+
+    // Neo4j driver
+    compile group: 'org.neo4j.driver', name: 'neo4j-java-driver', version: neo4jDriverVersion
 
     // JanusGraph
     compile(group: 'org.janusgraph', name: 'janusgraph-core',      version: janusgraphVersion) {
@@ -55,7 +52,7 @@ dependencies {
 
     // TigerGraph
     // dependency seems unmaintained
-//    compile group: 'com.tigergraph.client', name: 'gsql_client', version: '2.5.2'
+    compile group: 'com.tigergraph.client', name: 'gsql_client', version: '2.5.2'
 
     testCompile 'junit:junit:4.12'
 }

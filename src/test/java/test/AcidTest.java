@@ -275,10 +275,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         for (Future<Map<String, Object>> future : futures) {
             final Map<String, Object> results = future.get();
             if (results.containsKey("firstRead")) {
-                final Set<Long> firstRead  = new HashSet<>((List<Long>) results.get("firstRead"));
-                final Set<Long> secondRead = new HashSet<>((List<Long>) results.get("secondRead"));
-                System.out.printf("FR:   %4s %4s %5b\n", firstRead, secondRead, !firstRead.equals(secondRead));
-                Assert.assertNotEquals(firstRead, secondRead);
+                final List<Long> firstRead  = ((List<Long>) results.get("firstRead"));
+                final List<Long> secondRead = ((List<Long>) results.get("secondRead"));
+                System.out.printf("FR:   %4s %4s %5b\n", firstRead, secondRead, firstRead.equals(secondRead));
+                Assert.assertEquals(firstRead, secondRead);
             }
         }
     }
@@ -315,11 +315,11 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         Random random = new Random();
-        long numPersons = 4;
-        long numForums = 3;
+        int numPersons = 4;
+        int numForums = 3;
         for (int i = 0; i < wc; i++) {
-            long forumId = random.nextLong() % numForums;
-            long personId = random.nextLong() % numPersons;
+            long forumId = random.nextInt(numForums) + 1;
+            long personId = random.nextInt(numPersons) + 1;
             clients.add(new TransactionThread<>(i, testDriver::ws1, ImmutableMap.of("forumId", forumId, "personId", personId, "sleepTime", 250L)));
         }
 
