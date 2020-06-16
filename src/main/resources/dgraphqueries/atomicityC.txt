@@ -1,0 +1,30 @@
+# Cypher >>>>>>
+# MATCH (p1:Person {id: $person1Id})
+# CREATE (p1)-[k:KNOWS]->(p2:Person)
+# SET
+# p1.emails = p1.emails + [$newEmail],
+# p2.id = $person2Id,
+# k.creationDate = $creationDate
+# <<<<<<<
+
+# GraphQL+ >>>>>>
+
+upsert {
+  query {
+    q(func: eq(id, $person1Id)) {
+      v as uid
+    }
+  }
+
+  mutation {
+    set {
+        uid(v) <emails> $newEmail .
+        
+        _:p2 <id> $person2Id .
+        _:p2 <dgraph.type> "Person" .
+        uid(v) <knows> _:p2 (creationDate=$creationDate) .
+    }
+  }
+}
+
+# <<<<<<<

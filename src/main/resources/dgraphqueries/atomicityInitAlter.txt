@@ -1,0 +1,9 @@
+id: string @index(term) .
+name: string @index(term) .
+emails: [string] .
+
+type Person {
+    id
+    name
+    emails
+}
