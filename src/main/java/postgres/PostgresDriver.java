@@ -58,7 +58,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     public ResultSet runQuery(Connection tt, String querySpecification, Map<String, Object> stringStringMap) throws Exception {
         ResultSet rs = null;
         querySpecification = substituteParameters(querySpecification, stringStringMap);
-        // don't close this staement before returning (e.g. in a try-with-resources block) so we can retrive elements of the resultset
+        // don't close this statement before returning (e.g. in a try-with-resources block) so we can retrive elements of the resultset
         Statement st = tt.createStatement();
         rs = st.executeQuery(querySpecification);
         return rs;
@@ -80,6 +80,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
                 querySpecification = querySpecification.replace("$" + param.getKey(), param.getValue().toString());
             }
         }
+        //System.err.println(querySpecification);
         return querySpecification;
     }
 
@@ -90,7 +91,9 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     protected void executeUpdates(String[] commands, boolean doCommit) {
         try (Connection conn = startTransaction(); Statement st = conn.createStatement()) {
             for (String sql : commands) {
-                st.executeUpdate(sql);
+                // we never need info on the resultset, if any
+                // so we use execute (which allows INSERT/UPDATE/DELETE/SELECT) instead of executeUpdate (which allows only INSERT/UPDATE/DELETE)
+                st.execute(sql);
             }
             if (doCommit) {
                 commitTransaction(conn);
@@ -107,6 +110,31 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
         executeUpdates(commands, doCommit);
     }
 
+    protected void executeUpdates(Connection conn, String[] commands) {
+        executeUpdates(conn, commands, true);
+    }
+
+    protected void executeUpdates(Connection conn, String[] commands, boolean doCommit) {
+        try (Statement st = conn.createStatement()) {
+            for (String sql : commands) {
+                // we never need info on the resultset, if any
+                // so we use execute (which allows INSERT/UPDATE/DELETE/SELECT) instead of executeUpdate (which allows only INSERT/UPDATE/DELETE)
+                st.execute(sql);
+            }
+            if (doCommit) {
+                commitTransaction(conn);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void executeUpdates(Connection conn, String[] commands, Map<String, Object> parameters, boolean doCommit) {
+        for(int i=0; i<commands.length; i++) {
+            commands[i]=substituteParameters(commands[i], parameters);
+        }
+        executeUpdates(conn, commands, doCommit);
+    }
 
 
     protected void createSchema() {
@@ -130,9 +158,23 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
         executeUpdates(PostgresQueries.atomicityCTx, parameters, true);
     }
 
+
     @Override
     public void atomicityRB(Map<String, Object> parameters) {
-
+        try (Connection conn = startTransaction()) {
+            executeUpdates(conn, PostgresQueries.atomicityRBxP1update, parameters, false);
+            ResultSet rs = runQuery(conn, PostgresQueries.atomicityRBxP2check, parameters);
+            if (rs.next()) {
+                abortTransaction(conn);
+            } else {
+                executeUpdates(conn, PostgresQueries.atomicityRBxP2create, parameters, false);
+                commitTransaction(conn);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -186,42 +228,93 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public void g1aInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.g1aInit);
     }
 
     @Override
     public Map<String, Object> g1a1(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            executeUpdates(conn, PostgresQueries.g1a1, parameters, false);
+            abortTransaction(conn);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> g1a2(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet result = runQuery(conn, PostgresQueries.g1a2, parameters);
+            if (!result.next()) throw new IllegalStateException("G1a T2 result empty");
+            final long pVersion = result.getLong(1);
+
+            return ImmutableMap.of("pVersion", pVersion);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void g1bInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.g1bInit);
     }
 
     @Override
     public Map<String, Object> g1b1(Map<String, Object> parameters) {
-        return null;
-    }
+        try (Connection conn = startTransaction()) {
+            executeUpdates(conn, PostgresQueries.g1b1, parameters, true);
+
+            return ImmutableMap.of();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+     }
 
     @Override
     public Map<String, Object> g1b2(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet result = runQuery(conn, PostgresQueries.g1b2, parameters);
+            if (!result.next()) throw new IllegalStateException("G1b T2 result empty");
+            final long pVersion = result.getLong(1);
+
+            return ImmutableMap.of("pVersion", pVersion);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void g1cInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.g1cInit);
     }
 
     @Override
     public Map<String, Object> g1c(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            executeUpdates(conn, PostgresQueries.g1c1, parameters, false);
+            final ResultSet result = runQuery(conn, PostgresQueries.g1c2, parameters);
+            result.next();
+            final long person2Version = result.getLong(1);
+            commitTransaction(conn);
+
+            return ImmutableMap.of("person2Version", person2Version);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
