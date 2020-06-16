@@ -12,6 +12,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, DgraphProto.Response> {
@@ -130,7 +131,68 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public void atomicityRB(Map<String, Object> parameters) {
+        try {
+            final Transaction txn = startTransaction();
 
+            String query = "{\n" +
+                    "    q(func: eq(id, $person1Id)) {\n" +
+                    "      v as uid\n" +
+                    "    }\n" +
+                    "  }";
+            query = query.replace("$person1Id", String.valueOf(parameters.get("person1Id")));
+
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("uid(v) <emails> \"$newEmail\" .".replace("$newEmail", (String) parameters.get("newEmail")));
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request1 = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request1);
+
+            // Part 2
+            String query2 = "{\n" +
+                    "    all(func: eq(id, $person2Id)) {\n" +
+                    "      uid\n" +
+                    "    }\n" +
+                    "  }";
+            query2 = query2.replace("$person2Id", String.valueOf(parameters.get("person2Id")));
+
+            DgraphProto.Response response = client.newReadOnlyTransaction().query(query2);
+
+            People ppl = gson.fromJson(response.getJson().toStringUtf8(), People.class);
+
+            if (!ppl.all.isEmpty()) {
+                abortTransaction(txn);
+            } else {
+                ArrayList<String> p2AddMutation = new ArrayList<>();
+
+                p2AddMutation.add("_:p2 <id> \"$person2Id\" .".replace("$person2Id", String.valueOf(parameters.get("person2Id"))));
+
+                String p2AddMutationQuery = String.join("\n", p2AddMutation);
+
+                DgraphProto.Mutation mu2 = DgraphProto.Mutation.newBuilder()
+                        .setSetNquads(ByteString.copyFromUtf8(p2AddMutationQuery))
+                        .build();
+
+                DgraphProto.Request request2 = DgraphProto.Request.newBuilder()
+                        .addMutations(mu2)
+                        .setCommitNow(true)
+                        .build();
+
+                txn.doRequest(request2);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
