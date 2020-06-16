@@ -57,12 +57,12 @@ public class JanusGraphDriver extends TestDriver {
     public void atomicityInit() {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
-        Vertex alice = g.addV().next();
+        Vertex alice = g.addV("Person").next();
         String[] aliceEmails = {"alice@aol.com"};
         alice.property("id",1L);
         alice.property("emails",aliceEmails);
         alice.property("name","Alice");
-        Vertex bob = g.addV().next();
+        Vertex bob = g.addV("Person").next();
         String[] bobEmails = {"bob@hotmail.com", "bobby@yahoo.com"};
         bob.property("id",2L);
         bob.property("emails",bobEmails);
@@ -76,13 +76,15 @@ public class JanusGraphDriver extends TestDriver {
         GraphTraversalSource g = transaction.traversal();
         long person1ID       = (long)   parameters.get("person1Id");
         long person2ID       = (long)   parameters.get("person2Id");
-        long since           = (long)   parameters.get("since");
+        long since           = (int)   parameters.get("since");
         String[] newEmail      = {(String) parameters.get("newEmail")};
-        if(g.V().has("id",person1ID).hasNext()) {
+        if(g.V().hasLabel("Person").has("id",person1ID).hasNext()) {
             Vertex person1 = g.V().hasLabel("Person").has("id", person1ID).next();
-            String[] oldEmails = person1.value("emails");
+
+            String[] oldEmails = new String[5];
+            try{oldEmails = person1.value("emails");}catch (Exception e){}
             person1.property("emails", ArrayUtils.addAll(oldEmails, newEmail));
-            Vertex person2 = g.addV().next();
+            Vertex person2 = g.addV("Person").next();
             person2.property("id",person2ID);
             person1.addEdge("Knows",person2).property("since",since);
             commitTransaction(transaction);
@@ -102,7 +104,28 @@ public class JanusGraphDriver extends TestDriver {
 
     @Override
     public Map<String, Object> atomicityCheck() {
-        return null;
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        if(g.V().hasLabel("Person").hasNext()) {
+            long numPersons =0;
+            long numNames =0;
+            long numEmails =0;
+            for(Vertex vertex: g.V().hasLabel("Person").next(10)){
+                numPersons++;
+                try {
+                    String name = vertex.value("name");
+                    numNames++;
+                } catch (Exception e) {}
+                try {
+                    String[] emails = vertex.value("emails");
+                    numEmails += emails.length;
+                } catch (Exception e) {}
+
+            }
+            return ImmutableMap.of("numPersons", numPersons, "numNames", numNames, "numEmails", numEmails);
+        }
+        else
+            throw new IllegalStateException("ATOMIC CHECK Person Missing from Graph");
     }
 
 
