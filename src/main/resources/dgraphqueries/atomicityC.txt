@@ -18,10 +18,13 @@ upsert {
 
   mutation {
     set {
+        _:p2 <dgraph.type> "Person" .
+        uid(v) <knows> _:p2 .
+
         uid(v) <emails> $newEmail .
         
         _:p2 <id> $person2Id .
-        _:p2 <dgraph.type> "Person" .
+        
         uid(v) <knows> _:p2 (creationDate=$creationDate) .
     }
   }
