@@ -24,7 +24,7 @@ jobs:
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
-      - run: gradle dependencies
+      - run: ./gradlew dependencies
 
       - save_cache:
           paths:
@@ -42,6 +42,6 @@ jobs:
             docker run -p 17687:7687 memgraph
             # Neo4j
             docker run -p 7474:7474 -p 7687:7687 --env=NEO4J_AUTH=none neo4j:3.5
-            gradle build -x test
+            ./gradlew build -x test
 
       - slack/status
