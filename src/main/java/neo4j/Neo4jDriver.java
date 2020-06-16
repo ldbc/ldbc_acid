@@ -322,11 +322,14 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, St
             long personId  = random.nextInt((int) parameters.get("cycleSize")+1);
 
             final Transaction tt = startTransaction();
-            tt.run("MATCH path = (n:Person {id: $personId})-[:KNOWS*..4]->(n)\n" +
-                " UNWIND nodes(path)[0..4] AS person\n" +
-                " SET person.version = person.version + 1",
+            tt.run("MATCH path = (p1:Person {id: $personId})-[:KNOWS]->(p2)-[:KNOWS]->(p3)-[:KNOWS]->(p4)-[:KNOWS]->(p1)\n" +
+                            " SET p1.version = p1.version + 1\n" +
+                            " SET p2.version = p2.version + 1\n" +
+                            " SET p3.version = p3.version + 1\n" +
+                            " SET p4.version = p4.version + 1\n",
                     ImmutableMap.of("personId", personId));
             commitTransaction(tt);
+            // TODO: once memgraph fixes this, use an actual path
         }
         return ImmutableMap.of();
     }
@@ -334,13 +337,13 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, St
     @Override
     public Map<String, Object> otv2(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
-        final StatementResult result1 = tt.run("MATCH path1 = (n1:Person {id: $personId})-[:KNOWS*..4]->(n1) RETURN [p IN nodes(path1) | p.version][0..4] AS firstRead", parameters);
+        final StatementResult result1 = tt.run("MATCH (p1:Person {id: $personId})-[:KNOWS]->(p2)-[:KNOWS]->(p3)-[:KNOWS]->(p4)-[:KNOWS]->(p1) RETURN [p1.version, p2.version, p3.version, p4.version] AS firstRead", parameters);
         if (!result1.hasNext()) throw new IllegalStateException("OTV2 result1 empty");
         final List<Object> firstRead = result1.next().get("firstRead").asList();
 
         sleep((Long) parameters.get("sleepTime"));
 
-        final StatementResult result2 = tt.run("MATCH path1 = (n1:Person {id: $personId})-[:KNOWS*..4]->(n1) RETURN [p IN nodes(path1) | p.version][0..4] AS secondRead", parameters);
+        final StatementResult result2 = tt.run("MATCH (p1:Person {id: $personId})-[:KNOWS]->(p2)-[:KNOWS]->(p3)-[:KNOWS]->(p4)-[:KNOWS]->(p1) RETURN [p1.version, p2.version, p3.version, p4.version] AS secondRead", parameters);
         if (!result2.hasNext()) throw new IllegalStateException("OTV2 result2 empty");
         final List<Object> secondRead = result2.next().get("secondRead").asList();
 

@@ -6,6 +6,9 @@
 * Memgraph
 * Dgraph
 * JanusGraph
+* PGX
+* PostgreSQL
+* TigerGraph
 
 ## Paper
 
