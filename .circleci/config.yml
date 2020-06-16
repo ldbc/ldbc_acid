@@ -43,6 +43,16 @@ jobs:
             docker run -d -p 17687:7687 memgraph
             # Neo4j
             docker run -d -p 7474:7474 -p 7687:7687 --env=NEO4J_AUTH=none neo4j:3.5
-            ./gradlew build -x test
+            ./gradlew test
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/test-results/junit/
+            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/test-results/junit/ \;
+          when: always
+      - store_test_results:
+          path: ~/test-results
+      - store_artifacts:
+          path: ~/test-results/junit     
 
       - slack/status
