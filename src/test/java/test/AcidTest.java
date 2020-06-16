@@ -188,7 +188,9 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
         List<Map<String, Object>> resultss = new ArrayList<>();
         for (Future<Map<String, Object>> future : futures) {
-            resultss.add(future.get());
+            try {resultss.add(future.get());} catch (Exception e) {
+                System.out.println("x"); // TODO add placeholder to array
+            }
         }
 
         for (int i = 1; i <= c; i++) {
