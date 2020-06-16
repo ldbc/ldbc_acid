@@ -55,7 +55,49 @@ public class JanusGraphDriver extends TestDriver {
 
     @Override
     public void atomicityInit() {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        Vertex alice = g.addV().next();
+        String[] aliceEmails = {"alice@aol.com"};
+        alice.property("id",1L);
+        alice.property("emails",aliceEmails);
+        alice.property("name","Alice");
+        Vertex bob = g.addV().next();
+        String[] bobEmails = {"bob@hotmail.com", "bobby@yahoo.com"};
+        bob.property("id",2L);
+        bob.property("emails",bobEmails);
+        bob.property("name","Bob");
+        commitTransaction(transaction);
+    }
 
+    @Override
+    public void atomicityC(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        long person1ID       = (long)   parameters.get("person1Id");
+        long person2ID       = (long)   parameters.get("person2Id");
+        long since           = (long)   parameters.get("since");
+        String[] newEmail      = {(String) parameters.get("newEmail")};
+        if(g.V().has("id",person1ID).hasNext()) {
+            Vertex person1 = g.V().hasLabel("Person").has("id", person1ID).next();
+            String[] oldEmails = person1.value("emails");
+            person1.property("emails", ArrayUtils.addAll(oldEmails, newEmail));
+            Vertex person2 = g.addV().next();
+            person2.property("id",person2ID);
+            person1.addEdge("Knows",person2).property("since",since);
+            commitTransaction(transaction);
+        }
+        else
+            throw new IllegalStateException("AC Person Missing from Graph");
+    }
+
+    @Override
+    public void atomicityRB(Map parameters) {
+        JanusGraphTransaction transaction = startTransaction();
+        GraphTraversalSource g = transaction.traversal();
+        long person1ID       = (long)   parameters.get("person1Id");
+        long person2ID       = (long)   parameters.get("person2Id");
+        String[] newEmail      = {(String) parameters.get("newEmail")};
     }
 
     @Override
@@ -63,15 +105,7 @@ public class JanusGraphDriver extends TestDriver {
         return null;
     }
 
-    @Override
-    public void atomicityRB(Map parameters) {
 
-    }
-
-    @Override
-    public void atomicityC(Map parameters) {
-
-    }
 
     //****** G0 BLOCK ******//
 
