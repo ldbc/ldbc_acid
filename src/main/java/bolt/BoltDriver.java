@@ -1,10 +1,8 @@
-package neo4j;
+package bolt;
 
 import com.google.common.collect.ImmutableMap;
 import driver.TestDriver;
-import groovy.transform.Immutable;
 import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Record;
@@ -16,11 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, StatementResult> {
+// Driver for Bolt-compatible graph databases (Memgraph and Neo4j)
+public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, StatementResult> {
 
     protected Driver driver;
 
-    public Neo4jDriver(int port) {
+    public BoltDriver(int port) {
         driver = GraphDatabase.driver("bolt://localhost:" + port, AuthTokens.none());
     }
 

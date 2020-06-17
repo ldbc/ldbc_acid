@@ -1,12 +1,12 @@
 package test;
 
-import neo4j.Neo4jDriver;
+import bolt.BoltDriver;
 import org.junit.BeforeClass;
 
-public class MemgraphAcidTest extends AcidTest<Neo4jDriver> {
+public class MemgraphAcidTest extends AcidTest<BoltDriver> {
 
     public MemgraphAcidTest() {
-        super(new Neo4jDriver(17687));
+        super(new BoltDriver(17687));
     }
 
     @BeforeClass
