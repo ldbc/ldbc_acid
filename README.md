@@ -5,10 +5,9 @@
 * Neo4j
 * Memgraph
 * Dgraph
-* JanusGraph
-* PGX
-* PostgreSQL
-* TigerGraph
+* JanusGraph (various backend)
+* TigerGraph [?]
+* PostgreSQL (various isolation levels)
 
 ## Paper
 
@@ -16,12 +15,6 @@
 * PDF: <https://www.db.bme.hu/paper-snb-interactive-tpctc/ms.pdf>
 
 ## Getting started
-
-TODO.
-
-### Postgres
-
-We're currently using and embedded version.
 
 ### Neo4j
 
@@ -63,10 +56,12 @@ TODO
 
 ### TigerGraph
 
+TODO
+
 ```
 docker run docker.tigergraph.com/tigergraph-dev:latest
 ```
 
-### PGX
+### Postgres
 
-TODO
+We're currently using an embedded version.
