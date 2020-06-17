@@ -539,12 +539,85 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public void g1cInit() {
+        final Transaction txn = startTransaction();
 
+        try {
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("_:g1 <id> \"1\" .");
+            mutationQueries.add("_:g1 <dgraph.type> \"Person\" .");
+            mutationQueries.add("_:g1 <version> \"0\" .");
+            mutationQueries.add("_:g2 <id> \"2\" .");
+            mutationQueries.add("_:g2 <dgraph.type> \"Person\" .");
+            mutationQueries.add("_:g2 <version> \"0\" .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .addMutations(mu)
+                    .setCommitNow(true)
+                    .build();
+            txn.doRequest(request);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Map<String, Object> g1c(Map<String, Object> parameters) {
-        return null;
+        long person2Version = -1;
+
+        final Transaction txn = startTransaction();
+
+        try {
+            String query = "{\n" +
+                    "  all(func: eq(id, \"$person1Id\")) {\n" +
+                    "    p1 as uid\n" +
+                    "  }\n" +
+                    "}";
+
+            query = query.replace("$person1Id",String.valueOf(parameters.get("person1Id")));
+
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("uid(p1) <version> \"$transactionId\" .".replace("$transactionId", String.valueOf(parameters.get("transactionId"))));
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request);
+
+            String queryLookup = "{\n" +
+                    "  all(func: eq(id, \"$person2Id\")) {\n" +
+                    "    version\n" +
+                    "  }\n" +
+                    "}";
+            queryLookup = queryLookup.replace("$person2Id",String.valueOf(parameters.get("person2Id")));
+
+            DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
+
+            People responseStatistics = gson.fromJson(response.getJson().toStringUtf8(), People.class);
+
+            person2Version = Long.parseLong(responseStatistics.all.get(0).version);
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ImmutableMap.of("person2Version", person2Version);
     }
 
     @Override
