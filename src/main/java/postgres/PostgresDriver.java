@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, ResultSet> {
 
@@ -383,19 +384,6 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
         }
     }
 
-    //         final Transaction tt = startTransaction();
-    //
-    //        final StatementResult result1 = tt.run("MATCH (po1:Post {id: $postId})<-[:LIKES]-(pe1:Person) RETURN count(pe1) AS firstRead", parameters);
-    //        if (!result1.hasNext()) throw new IllegalStateException("PMP result1 empty");
-    //        final long firstRead = result1.next().get("firstRead").asLong();
-    //
-    //        sleep((Long) parameters.get("sleepTime"));
-    //
-    //        final StatementResult result2 = tt.run("MATCH (po2:Post {id: $postId})<-[:LIKES]-(pe2:Person) RETURN count(pe2) AS secondRead", parameters);
-    //        if (!result2.hasNext()) throw new IllegalStateException("PMP result2 empty");
-    //        final long secondRead = result2.next().get("secondRead").asLong();
-    //
-    //        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
     @Override
     public Map<String, Object> pmp2(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
@@ -421,17 +409,61 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public void otvInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.otvInit);
     }
 
     @Override
     public Map<String, Object> otv1(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            Random random = new Random();
+            for (int i = 0; i < 100; i++) {
+                long personId  = random.nextInt((int) parameters.get("cycleSize")+1);
+                ResultSet rs = runQuery(conn, PostgresQueries.otv1query, ImmutableMap.of("personId", personId));
+                while (rs.next()) {
+                    executeUpdates(PostgresQueries.otv1update, ImmutableMap.of("p1id", rs.getLong(1), "p2id", rs.getLong(2), "p3id", rs.getLong(3), "p4id", rs.getLong(4)), true);
+                }
+                commitTransaction(conn);
+            }
+            return ImmutableMap.of();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Map<String, Object> otv2(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet result1 = runQuery(conn, PostgresQueries.otv2, parameters);
+            if (!result1.next()) throw new IllegalStateException("OTV2 result1 empty");
+            final List<Object> firstRead = new ArrayList();
+            {
+                firstRead.add(result1.getLong(1));
+                firstRead.add(result1.getLong(2));
+                firstRead.add(result1.getLong(3));
+                firstRead.add(result1.getLong(4));
+            }
+
+            sleep((Long) parameters.get("sleepTime"));
+
+            final ResultSet result2 = runQuery(conn, PostgresQueries.otv2, parameters);
+            if (!result2.next()) throw new IllegalStateException("OTV2 result2 empty");
+            final List<Object> secondRead = new ArrayList();
+            {
+                secondRead.add(result2.getLong(1));
+                secondRead.add(result2.getLong(2));
+                secondRead.add(result2.getLong(3));
+                secondRead.add(result2.getLong(4));
+            }
+
+            return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -466,17 +498,56 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public void wsInit() {
-
+        createSchema();
+        // create 10 pairs of persons with indices (1,2), ..., (19,20)
+        for (int i = 1; i <= 10; i++) {
+            // we utilise separate transactions for each iteration, but it should not matter in the initialization.
+            executeUpdates(PostgresQueries.wsInit, ImmutableMap.of("person1Id", 2*i-1, "person2Id", 2*i), true);
+        }
     }
 
     @Override
     public Map<String, Object> ws1(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet rs = runQuery(conn, PostgresQueries.ws1query, parameters);
+
+            if (!rs.next()) {
+                sleep((Long) parameters.get("sleepTime"));
+
+                long personId = new Random().nextBoolean() ?
+                        (long) parameters.get("person1Id") :
+                        (long) parameters.get("person2Id");
+
+                executeUpdates(conn, PostgresQueries.ws1update, ImmutableMap.of("personId", personId), true);
+            }
+            return ImmutableMap.of();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Map<String, Object> ws2(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet rs = runQuery(conn, PostgresQueries.ws2, ImmutableMap.of());
+
+            if (rs.next()) {
+                return ImmutableMap.of(
+                        "p1id",    rs.getLong(1),
+                        "p1value", rs.getLong(2),
+                        "p2id",    rs.getLong(3),
+                        "p2value", rs.getLong(4));
+            } else {
+                return ImmutableMap.of();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override

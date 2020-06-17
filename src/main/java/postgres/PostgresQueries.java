@@ -8,7 +8,7 @@ public final class PostgresQueries {
     public final static String[] tablesCreate = {
             "create table if not exists forum ( id bigint not null, moderatorid bigint )"
             , "create table if not exists post ( id bigint not null, forumid bigint )"
-            , "create table if not exists person ( id bigint not null, numfriends bigint, version bigint, versionHistory bigint[], name varchar, emails varchar[] )"
+            , "create table if not exists person ( id bigint not null, numfriends bigint, value bigint, version bigint, versionHistory bigint[], name varchar, emails varchar[] )"
             , "create table if not exists likes ( personid bigint not null, postid bigint not null )"
             , "create table if not exists knows ( person1id bigint not null, person2id bigint not null, creationDate varchar, versionHistory bigint[])"
     };
@@ -42,8 +42,8 @@ public final class PostgresQueries {
     public final static String atomicityCheck = "select count(*) as numPersons, count(name) as numNames, sum(array_length(emails, 1)) as numEmails from person";
 
     public final static String[] g0Init = {
-      "insert into person (id, versionHistory) values (1, ARRAY[]::bigint[0]), (2, ARRAY[]::bigint[0])"
-      , "insert into knows (person1id, person2id, versionHistory) values (1, 2, ARRAY[]::bigint[0]), (2, 1, ARRAY[]::bigint[0])"
+            "insert into person (id, versionHistory) values (1, ARRAY[]::bigint[0]), (2, ARRAY[]::bigint[0])"
+            , "insert into knows (person1id, person2id, versionHistory) values (1, 2, ARRAY[]::bigint[0]), (2, 1, ARRAY[]::bigint[0])"
     };
     public final static String[] g0 = {
             "update person set versionHistory = versionHistory || $transactionId::bigint where id = $person1Id"
@@ -82,9 +82,47 @@ public final class PostgresQueries {
     public final static String imp2 = "select version as valueRead from person where id = $personId";
 
     public final static String[] pmpInit = {
-      "insert into person (id) values (1)"
-      , "insert into post (id) values (1)"
+            "insert into person (id) values (1)"
+            , "insert into post (id) values (1)"
     };
     public final static String[] pmp1 = { "insert into likes (personid, postid) select pe.id, po.id from person pe, post po where pe.id = $personId and po.id = $postId" };
     public final static String pmp2 = "select count(pe.id) as valueRead from post po, likes l, person pe where po.id = $postId and po.id = l.postid and l.personid = pe.id";
+
+    public final static String[] otvInit = {
+            "insert into person (id, version) values (1, 0), (2, 0), (3, 0), (4, 0)"
+            , "insert into knows (person1id, person2id) values (1, 2), (2, 3), (3, 4), (4, 1)"
+            , "insert into knows (person2id, person1id) values (1, 2), (2, 3), (3, 4), (4, 1)"
+    };
+    public final static String otv1query =
+            "select p1.id, p2.id, p3.id, p4.id " +
+                    "from person p1, person p2, person p3, person p4 " +
+                    ", knows k1, knows k2, knows k3, knows k4 " +
+                    "where p1.id = $personId " +
+                    "and p1.id = k1.person1id and k1.person2id = p2.id " +
+                    "and p2.id = k2.person1id and k2.person2id = p3.id " +
+                    "and p3.id = k3.person1id and k3.person2id = p4.id " +
+                    "and p4.id = k4.person1id and k4.person2id = p1.id " +
+                    "and p1.id not in (p2.id, p3.id, p4.id) " +
+                    "and p2.id not in (p3.id, p4.id) " +
+                    "and p3.id <> p4.id";
+    public final static String[] otv1update = { "update person set version = version + 1 where id in ($p1id, $p2id, $p3id, $p4id)" };
+    public final static String otv2 = "select p1.version, p2.version, p3.version, p4.version " +
+            "from person p1, person p2, person p3, person p4 " +
+            ", knows k1, knows k2, knows k3, knows k4 " +
+            "where p1.id = $personId " +
+            "and p1.id = k1.person1id and k1.person2id = p2.id " +
+            "and p2.id = k2.person1id and k2.person2id = p3.id " +
+            "and p3.id = k3.person1id and k3.person2id = p4.id " +
+            "and p4.id = k4.person1id and k4.person2id = p1.id " +
+            "and p1.id not in (p2.id, p3.id, p4.id) " +
+            "and p2.id not in (p3.id, p4.id) " +
+            "and p3.id <> p4.id";
+
+    public final static String[] wsInit = { "insert into person (id, value) values ($person1Id, 70), ($person2Id, 80)" };
+    public final static String ws1query = "select p1,id, p2.id from person p1, person p2 where p1.id = $persion1Id and p2.id = $person2Id and p1.value + p2.value < 100";
+    public final static String[] ws1update = { "update person set value = value - 100 where id = $personId"};
+    public final static String ws2 = "select p1.id AS p1id, p1.value AS p1value, p2.id AS p2id, p2.value AS p2value " +
+            "from person p1, person p2 " +
+            "where p1.id+1 = p2.id " +
+            "and p1.value + p2.value <= 0 ";
 }
