@@ -441,7 +441,8 @@ public class Neo4jDriver extends TestDriver<Transaction, Map<String, Object>, St
     public Map<String, Object> ws1(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
-        final StatementResult result = tt.run("MATCH (f:Forum {id: $forumId})-[:HAS_MODERATOR]->(p:Person {id: $personId})\n" +
+        // check whether Forum f has any outgoing edges
+        final StatementResult result = tt.run("MATCH (f:Forum {id: $forumId})-[:HAS_MODERATOR]->(p:Person)\n" +
                 "RETURN f, p", parameters);
 
         if (!result.hasNext()) {
