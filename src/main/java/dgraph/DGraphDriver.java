@@ -12,6 +12,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Value;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,12 +22,13 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     protected DgraphClient client;
     protected Gson gson = new Gson();
+    protected ManagedChannel channel;
 
     public DGraphDriver() {
-        ManagedChannel channel1 = ManagedChannelBuilder
+        channel = ManagedChannelBuilder
                 .forAddress("localhost", 9080)
                 .usePlaintext().build();
-        DgraphGrpc.DgraphStub stub1 = DgraphGrpc.newStub(channel1);
+        DgraphGrpc.DgraphStub stub1 = DgraphGrpc.newStub(channel);
 
         client = new DgraphClient(stub1);
     }
@@ -58,6 +60,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
         String schema = "id: string @index(term) .\n" +
                 "name: string @index(term) .\n" +
                 "versionHistory: [string] .\n" +
+                "version: int .\n" +
                 "emails: [string] .";
         DgraphProto.Operation operation = DgraphProto.Operation.newBuilder().setSchema(schema).build();
         client.alter(operation);
@@ -275,7 +278,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                     "      knows @filter(eq(id, \"$person2Id\")) {\n" +
                     "        v2 as uid\n" +
                     "      }\n" +
-                    "    }\n"+
+                    "    }\n" +
                     "}";
 
             query = query.replace("$person1Id", String.valueOf(parameters.get("person1Id")));
@@ -334,16 +337,100 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public void g1aInit() {
+        final Transaction txn = startTransaction();
+
+        try {
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("_:g1 <id> \"1\" .");
+            mutationQueries.add("_:g1 <dgraph.type> \"Person\" .");
+            mutationQueries.add("_:g1 <version> \"1\" .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .addMutations(mu)
+                    .setCommitNow(true)
+                    .build();
+            txn.doRequest(request);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Map<String, Object> g1a1(Map<String, Object> parameters) {
-        return null;
+        final Transaction txn = startTransaction();
+
+        String queryLookup = "{\n" +
+                "  all(func: eq(id, \"$personId\")) {\n" +
+                "    uid\n" +
+                "  }\n" +
+                "}";
+        queryLookup = queryLookup.replace("$personId",String.valueOf(parameters.get("person1Id")));
+
+        DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
+
+        People responseStatistics = gson.fromJson(response.getJson().toStringUtf8(), People.class);
+
+        if (responseStatistics.all.isEmpty()) throw new IllegalStateException("G1a1 StatementResult empty");
+
+        String query = "{\n" +
+                "  all(func: eq(id, \"$personId\")) {\n" +
+                "    p1 as uid\n" +
+                "  }\n" +
+                "}";
+
+        query = query.replace("$personId",String.valueOf(parameters.get("person1Id")));
+
+        sleep((Long) parameters.get("sleepTime"));
+
+        ArrayList<String> mutationQueries = new ArrayList<>();
+
+        mutationQueries.add("uid(p1) <version> \"2\" .");
+
+        String joinedQueries = String.join("\n", mutationQueries);
+
+        DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                .build();
+
+        DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                .setQuery(query)
+                .addMutations(mu)
+                .setCommitNow(false)
+                .build();
+        txn.doRequest(request);
+
+        sleep((Long) parameters.get("sleepTime"));
+
+        abortTransaction(txn);
+
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> g1a2(Map<String, Object> parameters) {
-        return null;
+        String queryLookup = "{\n" +
+                "  all(func: eq(id, \"$personId\")) {\n" +
+                "    version\n" +
+                "  }\n" +
+                "}";
+        queryLookup = queryLookup.replace("$personId",String.valueOf(parameters.get("person1Id")));
+
+        DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
+
+        People responseStatistics = gson.fromJson(response.getJson().toStringUtf8(), People.class);
+
+        if (responseStatistics.all.isEmpty()) throw new IllegalStateException("G1a T2 StatementResult empty");
+
+        final long pVersion = Long.parseLong(responseStatistics.all.get(0).version);
+
+        return ImmutableMap.of("pVersion", pVersion);
     }
 
     @Override
@@ -476,6 +563,6 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public void close() throws Exception {
-        // do nothing
+        channel.shutdown();
     }
 }
