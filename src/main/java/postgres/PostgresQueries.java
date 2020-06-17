@@ -1,6 +1,10 @@
 package postgres;
 
 public final class PostgresQueries {
+    public static final String isolation_serializable = "set transaction isolation level serializable";
+    public static final String isolation_repetable_read = "set transaction isolation level repeatable read";
+    public static final String isolation_read_committed = "set transaction isolation level read committed";
+
     public final static String[] tablesCreate = {
             "create table if not exists forum ( id bigint not null, moderatorid bigint )"
             , "create table if not exists post ( id bigint not null, forumid bigint )"
@@ -72,4 +76,15 @@ public final class PostgresQueries {
     public final static String[] g1cInit = { "insert into person (id, version) values (1, 0), (2, 0)"};
     public final static String[] g1c1 = {"update person set version = $transactionId where id = $person1Id"};
     public final static String g1c2 = "select version as person2Version from person where id = $person2Id";
+
+    public final static String[] impInit = { "insert into person (id, version) values (1, 1)" };
+    public final static String[] imp1 = { "update person set version = version + 1 where id = $personId" };
+    public final static String imp2 = "select version as valueRead from person where id = $personId";
+
+    public final static String[] pmpInit = {
+      "insert into person (id) values (1)"
+      , "insert into post (id) values (1)"
+    };
+    public final static String[] pmp1 = { "insert into likes (personid, postid) select pe.id, po.id from person pe, post po where pe.id = $personId and po.id = $postId" };
+    public final static String pmp2 = "select count(pe.id) as valueRead from post po, likes l, person pe where po.id = $postId and po.id = l.postid and l.personid = pe.id";
 }

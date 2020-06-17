@@ -41,6 +41,11 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     public Connection startTransaction() throws SQLException {
         Connection conn = ds.getConnection();
         conn.setAutoCommit(false);
+
+        //conn.createStatement().executeUpdate(PostgresQueries.isolation_serializable);
+        //conn.createStatement().executeUpdate(PostgresQueries.isolation_repetable_read);
+        conn.createStatement().executeUpdate(PostgresQueries.isolation_read_committed);
+
         return conn;
     }
 
@@ -305,7 +310,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
         try (Connection conn = startTransaction()) {
             executeUpdates(conn, PostgresQueries.g1c1, parameters, false);
             final ResultSet result = runQuery(conn, PostgresQueries.g1c2, parameters);
-            result.next();
+            if (!result.next()) throw new IllegalStateException("G1c T2 result empty");
             final long person2Version = result.getLong(1);
             commitTransaction(conn);
 
@@ -319,32 +324,99 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public void impInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.impInit);
     }
 
     @Override
     public Map<String, Object> imp1(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            executeUpdates(conn, PostgresQueries.imp1, parameters, true);
+
+            return ImmutableMap.of();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Map<String, Object> imp2(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet result1 = runQuery(conn, PostgresQueries.imp2, parameters);
+            if (!result1.next()) throw new IllegalStateException("IMP result1 empty");
+            final long firstRead = result1.getLong(1);
+
+            sleep((Long) parameters.get("sleepTime"));
+
+            final ResultSet result2 = runQuery(conn, PostgresQueries.imp2, parameters);
+            if (!result2.next()) throw new IllegalStateException("IMP result2 empty");
+            final long secondRead = result2.getLong(1);
+
+            commitTransaction(conn);
+
+            return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void pmpInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.pmpInit);
     }
 
     @Override
     public Map<String, Object> pmp1(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            executeUpdates(conn, PostgresQueries.pmp1, parameters, true);
+
+            return ImmutableMap.of();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
+    //         final Transaction tt = startTransaction();
+    //
+    //        final StatementResult result1 = tt.run("MATCH (po1:Post {id: $postId})<-[:LIKES]-(pe1:Person) RETURN count(pe1) AS firstRead", parameters);
+    //        if (!result1.hasNext()) throw new IllegalStateException("PMP result1 empty");
+    //        final long firstRead = result1.next().get("firstRead").asLong();
+    //
+    //        sleep((Long) parameters.get("sleepTime"));
+    //
+    //        final StatementResult result2 = tt.run("MATCH (po2:Post {id: $postId})<-[:LIKES]-(pe2:Person) RETURN count(pe2) AS secondRead", parameters);
+    //        if (!result2.hasNext()) throw new IllegalStateException("PMP result2 empty");
+    //        final long secondRead = result2.next().get("secondRead").asLong();
+    //
+    //        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
     @Override
     public Map<String, Object> pmp2(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet result1 = runQuery(conn, PostgresQueries.pmp2, parameters);
+            if (!result1.next()) throw new IllegalStateException("PMP result1 empty");
+            final long firstRead = result1.getLong(1);
+
+            sleep((Long) parameters.get("sleepTime"));
+
+            final ResultSet result2 = runQuery(conn, PostgresQueries.pmp2, parameters);
+            if (!result2.next()) throw new IllegalStateException("PMP result2 empty");
+            final long secondRead = result2.getLong(1);
+
+            commitTransaction(conn);
+
+            return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
