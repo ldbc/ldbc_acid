@@ -436,14 +436,13 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     @Override
     public void wsInit() {
         final Transaction tt = startTransaction();
-        tt.run("CREATE (:Person {id: 1})");
-        tt.run("CREATE (:Person {id: 2})");
-        tt.run("CREATE (:Person {id: 3})");
-        tt.run("CREATE (:Person {id: 4})");
 
-        tt.run("CREATE (:Forum {id: 1})");
-        tt.run("CREATE (:Forum {id: 2})");
-        tt.run("CREATE (:Forum {id: 3})");
+        // create 10 pairs of persons with indices (1,2), ..., (19,20)
+        for (int i = 1; i <= 10; i++) {
+            tt.run("CREATE (:Person {id: $person1Id, value: 70}), (:Person {id: $person2Id, value: 80})",
+                    ImmutableMap.of("person1Id", i, "person2Id", i+1));
+        }
+
         commitTransaction(tt);
     }
 
@@ -452,14 +451,21 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
         final Transaction tt = startTransaction();
 
         // check whether Forum f has any outgoing edges
-        final StatementResult result = tt.run("MATCH (f:Forum {id: $forumId})-[:HAS_MODERATOR]->(p:Person)\n" +
-                "RETURN f, p", parameters);
+        final StatementResult result = tt.run(
+                "MATCH (p1:Person {id: $person1Id}), (p2:Person {id: $person2Id})\n" +
+                "WHERE p1.value + p2.value < 100\n" +
+                "RETURN p1, p2", parameters);
 
         if (!result.hasNext()) {
             sleep((Long) parameters.get("sleepTime"));
-            tt.run("MATCH (f:Forum {id: $forumId}),\n" +
-                    "  (p:Person {id: $personId})\n" +
-                    "CREATE (f)-[:HAS_MODERATOR]->(p)", parameters);
+
+            long personId = new Random().nextBoolean() ?
+                    (long) parameters.get("person1Id") :
+                    (long) parameters.get("person2Id");
+
+            tt.run("MATCH (p:Person {id: $personId})\n" +
+                    "SET p.value = p.value - 100",
+                    ImmutableMap.of("personId", personId));
             commitTransaction(tt);
         }
 
@@ -469,18 +475,18 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     @Override
     public Map<String, Object> ws2(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
-        final StatementResult result = tt.run("MATCH (f:Forum)-[:HAS_MODERATOR]->(p:Person)\n" +
-                "WITH f, count(p) AS modCount\n" +
-                "WHERE modCount > 1\n" +
-                "RETURN\n" +
-                "  f.id AS forumId,\n" +
-                "  modCount");
+        // we select pairs of persons using (id, id+1) pairs
+        final StatementResult result = tt.run("MATCH (p1:Person), (p2:Person {id: p1.id+1})\n" +
+                "WHERE p1.value + p2.value <= 0\n"+
+                "RETURN p1.id AS p1id, p1.value AS p1value, p2.id AS p2id, p2.value AS p2value");
 
         if (result.hasNext()) {
-            final Record record = result.next();
-            final long forumId = record.get("forumId").asLong();
-            final long modCount = record.get("modCount").asLong();
-            return ImmutableMap.of("forumId", forumId, "modCount", modCount);
+            Record record = result.next();
+            return ImmutableMap.of(
+                    "p1id",    record.get("p1id"),
+                    "p1value", record.get("p1value"),
+                    "p2id",    record.get("p2id"),
+                    "p2value", record.get("p2value"));
         } else {
             return ImmutableMap.of();
         }
