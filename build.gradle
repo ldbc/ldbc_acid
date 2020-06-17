@@ -14,6 +14,7 @@ java {
 repositories {
     mavenCentral { metadataSources { mavenPom(); artifact() } }
     jcenter() // for TigerGraph
+    flatDir { dirs 'lib' }
 }
 
 dependencies {
@@ -53,6 +54,11 @@ dependencies {
     // TigerGraph
     // dependency seems unmaintained
     compile group: 'com.tigergraph.client', name: 'gsql_client', version: '2.5.2'
+
+    implementation name: 'pgx-api-19.3.1'
+    implementation name: 'pgx-client-19.3.1'
+    implementation name: 'pgx-common_core-19.3.1'
+    implementation name: 'pgx-common_rest-19.3.1'
 
     testCompile 'junit:junit:4.12'
 }
