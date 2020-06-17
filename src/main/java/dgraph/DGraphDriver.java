@@ -437,28 +437,104 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     public void g1bInit() {
         final Transaction txn = startTransaction();
 
-        // Create data
-        Person person = new Person();
-        person.name = "Alice";
+        try {
+            ArrayList<String> mutationQueries = new ArrayList<>();
 
-        // Serialize it
-        String json = gson.toJson(person);
-        // Run mutation
-        DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
-                .setCommitNow(true) // ?
-                .setSetJson(ByteString.copyFromUtf8(json))
-                .build();
-        txn.mutate(mu);
+            mutationQueries.add("_:g1 <id> \"1\" .");
+            mutationQueries.add("_:g1 <dgraph.type> \"Person\" .");
+            mutationQueries.add("_:g1 <version> \"99\" .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .addMutations(mu)
+                    .setCommitNow(true)
+                    .build();
+            txn.doRequest(request);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Map<String, Object> g1b1(Map<String, Object> parameters) {
-        return null;
+        final Transaction txn = startTransaction();
+
+        try {
+            String query = "{\n" +
+                    "  all(func: eq(id, \"$personId\")) {\n" +
+                    "    p1 as uid\n" +
+                    "  }\n" +
+                    "}";
+
+            query = query.replace("$personId",String.valueOf(parameters.get("personId")));
+
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("uid(p1) <version> \"$even\" .".replace("$even", String.valueOf(parameters.get("even"))));
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request);
+
+            sleep((Long) parameters.get("sleepTime"));
+
+            ArrayList<String> mutationQueries2 = new ArrayList<>();
+
+            mutationQueries2.add("uid(p1) <version> \"$odd\" .".replace("$odd", String.valueOf(parameters.get("odd"))));
+
+            String joinedQueries2 = String.join("\n", mutationQueries2);
+
+            DgraphProto.Mutation mu2 = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries2))
+                    .build();
+
+            DgraphProto.Request request2 = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .addMutations(mu2)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request2);
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> g1b2(Map<String, Object> parameters) {
-        return null;
+        String queryLookup = "{\n" +
+                "  all(func: eq(id, \"$personId\")) {\n" +
+                "    version\n" +
+                "  }\n" +
+                "}";
+        queryLookup = queryLookup.replace("$personId",String.valueOf(parameters.get("personId")));
+
+        DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
+
+        People responseStatistics = gson.fromJson(response.getJson().toStringUtf8(), People.class);
+
+        if (responseStatistics.all.isEmpty()) throw new IllegalStateException("G1b T2 StatementResult empty");
+
+        final long pVersion = Long.parseLong(responseStatistics.all.get(0).version);
+
+        return ImmutableMap.of("pVersion", pVersion);
     }
 
     @Override
