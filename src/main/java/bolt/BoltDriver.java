@@ -430,7 +430,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
         // create 10 pairs of persons with indices (1,2), ..., (19,20)
         for (int i = 1; i <= 10; i++) {
             tt.run("CREATE (:Person {id: $person1Id, value: 70}), (:Person {id: $person2Id, value: 80})",
-                    ImmutableMap.of("person1Id", i, "person2Id", i+1));
+                    ImmutableMap.of("person1Id", 2*i-1, "person2Id", 2*i));
         }
 
         commitTransaction(tt);
