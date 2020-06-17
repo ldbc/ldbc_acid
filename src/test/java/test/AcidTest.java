@@ -67,15 +67,24 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
             clients.add(new TransactionThread<>(i, testDriver::lu1, ImmutableMap.of("person1Id", 1L,"person2Id",(i+2L))));
         }
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
-        for (Future<Map<String, Object>> future : futures) {future.get();}
+        int aborted = 0;
+        for (Future<Map<String, Object>> future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                aborted++;
+            }
+        }
+        System.out.printf("Number of aborted transactions: %d\n", aborted);
+
         Map<String, Object> results = testDriver.lu2(ImmutableMap.of("personId", 1L));
         final long numFriendsProp = (long) results.get("numFriendsProp");
         final long numKnowsEdges = (long) results.get("numKnowsEdges");
-        final boolean pass = ((nTransactions == numFriendsProp)&&(nTransactions == numKnowsEdges));
-        System.out.printf("LU:    %4d %4d %4d %5b\n", nTransactions, numFriendsProp, numKnowsEdges, pass);
+        final boolean pass = ((nTransactions-aborted == numFriendsProp) && (nTransactions-aborted == numKnowsEdges));
+        System.out.printf("LU:    %4d %4d %4d %5b\n", nTransactions-aborted, numFriendsProp, numKnowsEdges, pass);
 
-        Assert.assertEquals(nTransactions, numFriendsProp);
-        Assert.assertEquals(nTransactions, numKnowsEdges);
+        Assert.assertEquals(nTransactions-aborted, numFriendsProp);
+        Assert.assertEquals(nTransactions-aborted, numKnowsEdges);
     }
 
     @Test
@@ -89,9 +98,16 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        int aborted = 0;
         for (Future<Map<String, Object>> future : futures) {
-            future.get();
+            try {
+                future.get();
+            } catch (Exception e) {
+                aborted++;
+            }
         }
+        System.out.printf("Number of aborted transactions: %d\n", aborted);
+
 
         Map<String, Object> results = testDriver.g0check(ImmutableMap.of("person1Id", 1L, "person2Id", 2L));
         if (results.containsKey("p1VersionHistory")) {
@@ -134,15 +150,21 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        int aborted = 0;
         for (Future<Map<String, Object>> future : futures) {
-            final Map<String, Object> results = future.get();
-            if (results.containsKey("pVersion")) {
-                final long pVersion = (long) results.get("pVersion");
+            try {
+                final Map<String, Object> results = future.get();
+                if (results.containsKey("pVersion")) {
+                    final long pVersion = (long) results.get("pVersion");
 
-                System.out.printf("G1a:   %4d %4d %5b\n", 1L, pVersion, 1L == pVersion);
-                Assert.assertEquals(1L, pVersion);
+                    System.out.printf("G1a:   %4d %4d %5b\n", 1L, pVersion, 1L == pVersion);
+                    Assert.assertEquals(1L, pVersion);
+                }
+            } catch (Exception e) {
+                aborted++;
             }
         }
+        System.out.printf("Number of aborted transactions: %d\n", aborted);
     }
 
     @Test
@@ -187,19 +209,32 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
         List<Map<String, Object>> resultss = new ArrayList<>();
+
+        // ugly hack: we put NULLs in the list
+        // TODO: use List<Optional<Map<String, Object>>>
+        int aborted = 0;
         for (Future<Map<String, Object>> future : futures) {
-            try {resultss.add(future.get());} catch (Exception e) {
-                System.out.println("x"); // TODO add placeholder to array
+            try {
+                resultss.add(future.get());
+            } catch (Exception e) {
+                resultss.add(null);
+                aborted++;
             }
         }
+        System.out.printf("Number of aborted transactions: %d\n", aborted);
 
+        // not that transactions are indexed from 1
+        // but lists are indexed from 0
         for (int i = 1; i <= c; i++) {
             Map<String, Object> results1 = resultss.get(i-1);
-            final int person2Version1 = ((Long) results1.get("person2Version")).intValue();
+            if (results1 == null) continue;
 
+            final int person2Version1 = ((Long) results1.get("person2Version")).intValue();
             if (person2Version1 == 0L) continue;
 
             final Map<String, Object> results2 = resultss.get(person2Version1-1);
+            Assert.assertNotNull(String.format("Transaction %d read data by aborted transaction %d", i, person2Version1), results2);
+
             final int person2Version2 = ((Long) results2.get("person2Version")).intValue();
 
             System.out.printf("G1c:   %4d %4d %4d %5b\n", i, person2Version1, person2Version2, i != person2Version2);
@@ -326,9 +361,15 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        int aborted = 0;
         for (Future<Map<String, Object>> future : futures) {
-            future.get();
+            try {
+                future.get();
+            } catch (Exception e) {
+                aborted++;
+            }
         }
+        System.out.printf("Number of aborted transactions: %d\n", aborted);
 
         Map<String, Object> results = testDriver.ws2(ImmutableMap.of());
         System.out.println(results);
