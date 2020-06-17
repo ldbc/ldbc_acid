@@ -10,6 +10,8 @@ import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.Value;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -20,7 +22,15 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     protected Driver driver;
 
     public BoltDriver(int port) {
-        driver = GraphDatabase.driver("bolt://localhost:" + port, AuthTokens.none());
+        try {
+            String ip = InetAddress.getByName("neo4j").getHostAddress();
+            driver = GraphDatabase.driver("bolt://"+ip+":" + port, AuthTokens.none());
+
+        } catch (UnknownHostException e) {
+            driver = GraphDatabase.driver("bolt://localhost:" + port, AuthTokens.none());
+
+        }
+
     }
 
     @Override

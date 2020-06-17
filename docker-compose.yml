@@ -1,0 +1,26 @@
+version: '3.3'
+
+services:
+  janusgraph:
+    image: janusgraph/janusgraph:latest
+    env_file: .env
+    deploy:
+      endpoint_mode: vip
+      replicas: 1
+
+  neo4j:
+    image: neo4j:3.5
+    environment:
+      - NEO4J_AUTH=none
+    deploy:
+      endpoint_mode: vip
+      replicas: 1
+
+  LDBC_ACID:
+    image: test
+    depends_on:
+      - janusgraph
+    env_file: .env
+    deploy:
+      endpoint_mode: vip
+      replicas: 1
