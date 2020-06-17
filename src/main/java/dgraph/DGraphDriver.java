@@ -371,7 +371,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "    uid\n" +
                 "  }\n" +
                 "}";
-        queryLookup = queryLookup.replace("$personId",String.valueOf(parameters.get("person1Id")));
+        queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("person1Id")));
 
         DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
 
@@ -385,7 +385,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "  }\n" +
                 "}";
 
-        query = query.replace("$personId",String.valueOf(parameters.get("person1Id")));
+        query = query.replace("$personId", String.valueOf(parameters.get("person1Id")));
 
         sleep((Long) parameters.get("sleepTime"));
 
@@ -420,7 +420,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "    version\n" +
                 "  }\n" +
                 "}";
-        queryLookup = queryLookup.replace("$personId",String.valueOf(parameters.get("person1Id")));
+        queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("person1Id")));
 
         DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
 
@@ -471,7 +471,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                     "  }\n" +
                     "}";
 
-            query = query.replace("$personId",String.valueOf(parameters.get("personId")));
+            query = query.replace("$personId", String.valueOf(parameters.get("personId")));
 
             ArrayList<String> mutationQueries = new ArrayList<>();
 
@@ -524,7 +524,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "    version\n" +
                 "  }\n" +
                 "}";
-        queryLookup = queryLookup.replace("$personId",String.valueOf(parameters.get("personId")));
+        queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("personId")));
 
         DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
 
@@ -580,7 +580,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                     "  }\n" +
                     "}";
 
-            query = query.replace("$person1Id",String.valueOf(parameters.get("person1Id")));
+            query = query.replace("$person1Id", String.valueOf(parameters.get("person1Id")));
 
             ArrayList<String> mutationQueries = new ArrayList<>();
 
@@ -604,7 +604,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                     "    version\n" +
                     "  }\n" +
                     "}";
-            queryLookup = queryLookup.replace("$person2Id",String.valueOf(parameters.get("person2Id")));
+            queryLookup = queryLookup.replace("$person2Id", String.valueOf(parameters.get("person2Id")));
 
             DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
 
@@ -622,17 +622,101 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public void impInit() {
+        final Transaction txn = startTransaction();
 
+        try {
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("_:g1 <id> \"1\" .");
+            mutationQueries.add("_:g1 <dgraph.type> \"Person\" .");
+            mutationQueries.add("_:g1 <version> \"1\" .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request);
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Map<String, Object> imp1(Map<String, Object> parameters) {
-        return null;
+        final Transaction txn = startTransaction();
+
+        try {
+            String query = "{\n" +
+                    "    all(func: eq(id, \"$personId\")) {\n" +
+                    "      p1 as uid\n" +
+                    "      prevVersion as version\n" +
+                    "      nextVersion as math(prevVersion + 1)\n" +
+                    "    }\n" +
+                    "  }";
+
+            query = query.replace("$personId", String.valueOf(parameters.get("personId")));
+
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("uid(p1) <version> val(nextVersion) .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request);
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> imp2(Map<String, Object> parameters) {
-        return null;
+        String queryLookup = "{\n" +
+                "  all(func: eq(id, \"$personId\")) {\n" +
+                "    version\n" +
+                "  }\n" +
+                "}";
+        queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("personId")));
+
+        DgraphProto.Response response1 = client.newReadOnlyTransaction().query(queryLookup);
+
+        People response1Statistics = gson.fromJson(response1.getJson().toStringUtf8(), People.class);
+
+        if (response1Statistics.all.isEmpty()) throw new IllegalStateException("IMP result1 empty");
+
+        final long firstRead = Long.parseLong(response1Statistics.all.get(0).version);
+
+        sleep((Long) parameters.get("sleepTime"));
+
+        DgraphProto.Response response2 = client.newReadOnlyTransaction().query(queryLookup);
+
+        People response2Statistics = gson.fromJson(response2.getJson().toStringUtf8(), People.class);
+
+        if (response2Statistics.all.isEmpty()) throw new IllegalStateException("IMP result2 empty");
+
+        final long secondRead = Long.parseLong(response2Statistics.all.get(0).version);
+
+        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
     }
 
     @Override
