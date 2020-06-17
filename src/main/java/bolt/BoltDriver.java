@@ -401,6 +401,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     public Map<String, Object> lu1(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         tt.run("MATCH (p1:Person {id: 1})\n" +
+                "CREATE (p1)-[:KNOWS]->(p2)\n" +
                 "SET p1.numFriends = p1.numFriends + 1\n" +
                 "RETURN p1.numFriends\n");
         commitTransaction(tt);
