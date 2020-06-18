@@ -58,7 +58,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     public void nukeDatabase() {
         client.alter(DgraphProto.Operation.newBuilder().setDropAll(true).build());
 
-        String schema = "id: string @index(term) .\n" +
+        String schema = "id: int @index(int) .\n" +
                 "name: string @index(term) .\n" +
                 "versionHistory: [string] .\n" +
                 "version: int .\n" +
@@ -1346,24 +1346,20 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
         final Transaction txn = startTransaction();
 
         try {
-            StringBuilder finalMutation = new StringBuilder();
             // create 10 pairs of persons with indices (1,2), ..., (19,20)
             for (int i = 1; i <= 10; i++) {
 
                 ArrayList<String> mutationQueries = new ArrayList<>();
 
-                mutationQueries.add("_:p" + (2 *i -1) + " <dgraph.type> \"Person\" .");
-                mutationQueries.add("_:p" + (2 *i -1)+ " <id> \"$person1Id\" .".replace("$person1Id", String.valueOf(2*i-1)));
-                mutationQueries.add("_:p" + (2 *i -1) + " <value> \"70\" .");
+                mutationQueries.add("_:p" + (2 * i - 1) + " <dgraph.type> \"Person\" .");
+                mutationQueries.add("_:p" + (2 * i - 1) + " <id> \"$person1Id\" .".replace("$person1Id", String.valueOf(2 * i - 1)));
+                mutationQueries.add("_:p" + (2 * i - 1) + " <value> \"70\" .");
 
-                mutationQueries.add("_:p" + 2*i + " <dgraph.type> \"Person\" .");
-                mutationQueries.add("_:p" + 2*i + " <id> \"$person2Id\" .".replace("$person2Id", String.valueOf(2*i)));
-                mutationQueries.add("_:p" + 2*i + " <value> \"80\" .");
+                mutationQueries.add("_:p" + 2 * i + " <dgraph.type> \"Person\" .");
+                mutationQueries.add("_:p" + 2 * i + " <id> \"$person2Id\" .".replace("$person2Id", String.valueOf(2 * i)));
+                mutationQueries.add("_:p" + 2 * i + " <value> \"80\" .");
 
                 String joinedQueries = String.join("\n", mutationQueries);
-
-                finalMutation.append(joinedQueries);
-                finalMutation.append("\n");
 
                 DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
                         .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
@@ -1384,12 +1380,131 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public Map<String, Object> ws1(Map<String, Object> parameters) {
-        return null;
+        final Transaction txn = startTransaction();
+
+        String query = "{\n" +
+                "  \n" +
+                "  person1(func: eq(id, \"$person1Id\")) @filter(type(Person)) {\n" +
+                "    value\n" +
+                "  }\n" +
+                "    \n" +
+                "  person2(func: eq(id, \"$person2Id\")) @filter(type(Person)) {\n" +
+                "    value\n" +
+                "  }\n" +
+                "}\n";
+
+        query = query.replace("$person1Id", String.valueOf(parameters.get("person1Id")));
+        query = query.replace("$person2Id", String.valueOf(parameters.get("person2Id")));
+
+        DgraphProto.Request request1 = DgraphProto.Request.newBuilder()
+                .setQuery(query)
+                .setCommitNow(false)
+                .build();
+        DgraphProto.Response response1 = txn.doRequest(request1);
+
+        Ws1Response peopleResponse = gson.fromJson(response1.getJson().toStringUtf8(), Ws1Response.class);
+
+        if (!peopleResponse.person1.isEmpty() &&
+                !peopleResponse.person2.isEmpty() &&
+                (Integer.parseInt(peopleResponse.person1.get(0).value) +
+                        Integer.parseInt(peopleResponse.person2.get(0).value) < 100)) {
+
+            sleep((Long) parameters.get("sleepTime"));
+
+            long personId = new Random().nextBoolean() ?
+                    (long) parameters.get("person1Id") :
+                    (long) parameters.get("person2Id");
+
+            String query2 = "{\n" +
+                    "  \n" +
+                    "  person1(func: eq(id, \"$personId\")) @filter(type(Person)) {\n" +
+                    "    p1 as uid\n" +
+                    "    preValue as value\n" +
+                    "    nextValue as math(preValue - 100)\n" +
+                    "  }\n" +
+                    "}";
+
+            query2 = query2.replace("$personId", String.valueOf(personId));
+
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("uid(p1) <value> nextValue .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request2 = DgraphProto.Request.newBuilder()
+                    .setQuery(query2)
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request2);
+        }
+
+        commitTransaction(txn);
+
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> ws2(Map<String, Object> parameters) {
-        return null;
+        final Transaction txn = startTransaction();
+
+        long p1id;
+        long p1value;
+        long p2id;
+        long p2value;
+
+        String query = "{\n" +
+                "  \n" +
+                "  person1(func: type(Person)) {\n" +
+                "    p1Id as id\n" +
+                "    value\n" +
+                "    nextId as math(p1Id + 1)\n" +
+                "  }\n" +
+                "    \n" +
+                "  person2(func: eq(id, val(nextId))) @filter(type(Person)) {\n" +
+                "    id\n" +
+                "    value\n" +
+                "  }\n" +
+                "}";
+
+        DgraphProto.Request request1 = DgraphProto.Request.newBuilder()
+                .setQuery(query)
+                .setCommitNow(false)
+                .build();
+        DgraphProto.Response response1 = txn.doRequest(request1);
+
+        Ws1Response peopleResponse = gson.fromJson(response1.getJson().toStringUtf8(), Ws1Response.class);
+
+        commitTransaction(txn);
+
+        if (!peopleResponse.person1.isEmpty() &&
+                !peopleResponse.person2.isEmpty() &&
+                peopleResponse.person1.size() == peopleResponse.person2.size()) {
+
+            for (int i = 0; i < peopleResponse.person1.size(); i++) {
+                if (Integer.parseInt(peopleResponse.person1.get(i).value) +
+                        Integer.parseInt(peopleResponse.person2.get(i).value) <= 0) {
+
+                    p1id = Long.parseLong(peopleResponse.person1.get(i).id);
+                    p1value = Long.parseLong(peopleResponse.person1.get(i).value);
+                    p2id = Long.parseLong(peopleResponse.person2.get(i).id);
+                    p2value = Long.parseLong(peopleResponse.person2.get(i).value);
+
+                    return ImmutableMap.of(
+                            "p1id", p1id,
+                            "p1value", p1value,
+                            "p2id", p2id,
+                            "p2value", p2value);
+                }
+            }
+        }
+
+        return ImmutableMap.of();
     }
 
     @Override
