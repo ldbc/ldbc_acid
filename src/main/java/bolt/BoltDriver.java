@@ -362,10 +362,11 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     @Override
     public Map<String, Object> fr1(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
-        tt.run("MATCH path = (n:Person {id: $personId})-[:KNOWS*..4]->(n)\n" +
-                " UNWIND nodes(path) AS person\n" +
-                " WITH DISTINCT person\n" +
-                " SET person.version = person.version + 1", parameters);
+        tt.run("MATCH path = (p1:Person {id: $personId})-[:KNOWS]->(p2)-[:KNOWS]->(p3)-[:KNOWS]->(p4)-[:KNOWS]->(p1)\n" +
+                " SET p1.version = p1.version + 1\n" +
+                " SET p2.version = p2.version + 1\n" +
+                " SET p3.version = p3.version + 1\n" +
+                " SET p4.version = p4.version + 1\n", parameters);
         commitTransaction(tt);
 
         return ImmutableMap.of();
