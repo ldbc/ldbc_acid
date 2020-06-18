@@ -8,5 +8,6 @@ public class Person {
     String name;
     String version;
     List<String> emails;
+    List<Person> knows;
     Person() {}
 }
