@@ -37,7 +37,7 @@ jobs:
             # download containers
             wget https://download.memgraph.com/memgraph/v1.0.0/docker/memgraph-1.0.0-community-docker.tar.gz
             docker pull neo4j:3.5
-            docker pull dgraph/dgraph:v20.03.3
+            docker pull dgraph/standalone:v20.03.3
             #docker pull docker.tigergraph.com/tigergraph-dev:latest
             # Memgraph
             docker load -i memgraph-1.0.0-community-docker.tar.gz
@@ -45,7 +45,7 @@ jobs:
             # Neo4j
             docker run -d -p 7474:7474 -p 7687:7687 --env=NEO4J_AUTH=none neo4j:3.5
             # Dgraph
-            # ...
+            docker run -d -p 8080:8080 -p 9080:9080 -p 8000:8000 -v ~/dgraph:/dgraph dgraph/standalone:v20.03.0
             ./gradlew test || true
       - run:
           name: Save test results
