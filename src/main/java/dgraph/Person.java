@@ -9,5 +9,7 @@ public class Person {
     String version;
     List<String> emails;
     List<Person> knows;
+    String numKnowsEdges;
+    String numFriendsProp;
     Person() {}
 }

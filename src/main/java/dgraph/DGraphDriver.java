@@ -62,6 +62,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "name: string @index(term) .\n" +
                 "versionHistory: [string] .\n" +
                 "version: int .\n" +
+                "numFriends: int .\n" +
                 "emails: [string] .";
         DgraphProto.Operation operation = DgraphProto.Operation.newBuilder().setSchema(schema).build();
         client.alter(operation);
@@ -1152,18 +1153,6 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public Map<String, Object> fr2(Map<String, Object> parameters) {
-//        final org.neo4j.driver.v1.Transaction tt = startTransaction();
-//
-//        final StatementResult result1 = tt.run("MATCH path1 = (n1:Person {id: $personId})-[:KNOWS*..4]->(n1) RETURN extract(p IN nodes(path1) | p.version) AS firstRead", parameters);
-//        if (!result1.hasNext()) throw new IllegalStateException("FR2 result1 empty");
-//        final List<Object> firstRead = result1.next().get("firstRead").asList();
-//
-//        sleep((Long) parameters.get("sleepTime"));
-//
-//        final StatementResult result2 = tt.run("MATCH path1 = (n1:Person {id: $personId})-[:KNOWS*..4]->(n1) RETURN extract(p IN nodes(path1) | p.version) AS secondRead", parameters);
-//        if (!result2.hasNext()) throw new IllegalStateException("FR2 result2 empty");
-//        final List<Object> secondRead = result2.next().get("secondRead").asList();
-
         final Transaction txn = startTransaction();
 
         ArrayList<Long> firstRead = new ArrayList<>();
@@ -1236,17 +1225,115 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public void luInit() {
+        final Transaction txn = startTransaction();
 
+        try {
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("_:p1 <dgraph.type> \"Person\" .");
+            mutationQueries.add("_:p1 <id> \"1\" .");
+            mutationQueries.add("_:p1 <numFriends> \"0\" .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request);
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Map<String, Object> lu1(Map<String, Object> parameters) {
-        return null;
+
+        final Transaction txn = startTransaction();
+
+        try {
+
+            String query = "{\n" +
+                    "    all(func: eq(id, \"$person1Id\")) @filter(type(Person)) {\n" +
+                    "      p1 as uid\n" +
+                    "      prevNumFriends as numFriends\n" +
+                    "      newNumFriends: nextNumFriends as math(prevNumFriends + 1)\n" +
+                    "    }\n" +
+                    "  }";
+
+            query = query.replace("$person1Id", String.valueOf(parameters.get("person1Id")));
+
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("_:p2 <dgraph.type> \"Person\" .");
+            mutationQueries.add("_:p2 <id> \"$person2Id\" .".replace("$person2Id", String.valueOf(parameters.get("person2Id"))));
+            mutationQueries.add("uid(p1) <knows> _:p2 .");
+            mutationQueries.add("uid(p1) <numFriends> val(nextNumFriends) .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request);
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> lu2(Map<String, Object> parameters) {
-        return null;
+
+        final Transaction txn = startTransaction();
+
+        long numKnowsEdges = -1;
+        long numFriends = -1;
+
+        try {
+            String query = "{\n" +
+                    "  all(func: eq(id, \"$personId\")) @filter(type(Person)){\n" +
+                    "    uid\n" +
+                    "    numKnowsEdges: count(knows)\n" +
+                    "    numFriendsProp: numFriends\n" +
+                    "  }\n" +
+                    "}";
+            query = query.replace("$personId", String.valueOf(parameters.get("personId")));
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .setCommitNow(false)
+                    .build();
+            DgraphProto.Response response1 = txn.doRequest(request);
+
+            People peopleResponse = gson.fromJson(response1.getJson().toStringUtf8(), People.class);
+
+            if (!peopleResponse.all.isEmpty()) {
+                numKnowsEdges = Long.parseLong(peopleResponse.all.get(0).numKnowsEdges);
+                numFriends = Long.parseLong(peopleResponse.all.get(0).numFriendsProp);
+            }
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ImmutableMap.of("numKnowsEdges", numKnowsEdges, "numFriendsProp", numFriends);
     }
 
     @Override
