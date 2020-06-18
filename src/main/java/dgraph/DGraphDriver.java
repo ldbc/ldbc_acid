@@ -191,10 +191,11 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
                 DgraphProto.Request request2 = DgraphProto.Request.newBuilder()
                         .addMutations(mu2)
-                        .setCommitNow(true)
+                        .setCommitNow(false)
                         .build();
 
                 txn.doRequest(request2);
+                commitTransaction(txn);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -259,9 +260,10 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
             DgraphProto.Request request = DgraphProto.Request.newBuilder()
                     .addMutations(mu)
-                    .setCommitNow(true)
+                    .setCommitNow(false)
                     .build();
             txn.doRequest(request);
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -354,9 +356,10 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
             DgraphProto.Request request = DgraphProto.Request.newBuilder()
                     .addMutations(mu)
-                    .setCommitNow(true)
+                    .setCommitNow(false)
                     .build();
             txn.doRequest(request);
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -452,9 +455,10 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
             DgraphProto.Request request = DgraphProto.Request.newBuilder()
                     .addMutations(mu)
-                    .setCommitNow(true)
+                    .setCommitNow(false)
                     .build();
             txn.doRequest(request);
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -559,9 +563,10 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
             DgraphProto.Request request = DgraphProto.Request.newBuilder()
                     .addMutations(mu)
-                    .setCommitNow(true)
+                    .setCommitNow(false)
                     .build();
             txn.doRequest(request);
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -691,6 +696,8 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public Map<String, Object> imp2(Map<String, Object> parameters) {
+        final Transaction txn = startTransaction();
+
         String queryLookup = "{\n" +
                 "  all(func: eq(id, \"$personId\")) {\n" +
                 "    version\n" +
@@ -698,7 +705,11 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "}";
         queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("personId")));
 
-        DgraphProto.Response response1 = client.newReadOnlyTransaction().query(queryLookup);
+        DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                .setQuery(queryLookup)
+                .setCommitNow(false)
+                .build();
+        DgraphProto.Response response1 = txn.doRequest(request);
 
         People response1Statistics = gson.fromJson(response1.getJson().toStringUtf8(), People.class);
 
@@ -708,7 +719,11 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
         sleep((Long) parameters.get("sleepTime"));
 
-        DgraphProto.Response response2 = client.newReadOnlyTransaction().query(queryLookup);
+        DgraphProto.Request request2 = DgraphProto.Request.newBuilder()
+                .setQuery(queryLookup)
+                .setCommitNow(false)
+                .build();
+        DgraphProto.Response response2 = txn.doRequest(request2);
 
         People response2Statistics = gson.fromJson(response2.getJson().toStringUtf8(), People.class);
 
@@ -721,17 +736,124 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public void pmpInit() {
+        final Transaction txn = startTransaction();
 
+        try {
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("_:g1 <id> \"1\" .");
+            mutationQueries.add("_:g1 <dgraph.type> \"Person\" .");
+            mutationQueries.add("_:p1 <id> \"1\" .");
+            mutationQueries.add("_:p1 <dgraph.type> \"Post\" .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request);
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Map<String, Object> pmp1(Map<String, Object> parameters) {
-        return null;
+        final Transaction txn = startTransaction();
+
+        try {
+            String query = "{\n" +
+                    "    person(func: eq(id, \"$personId\")) @filter(type(Person)) {\n" +
+                    "      pe as uid\n" +
+                    "    }\n" +
+                    "    post(func: eq(id, \"$postId\")) @filter(type(Post)) {\n" +
+                    "      po as uid\n" +
+                    "    }\n" +
+                    "  }";
+
+            query = query.replace("$personId", String.valueOf(parameters.get("personId")));
+            query = query.replace("$postId", String.valueOf(parameters.get("postId")));
+
+            ArrayList<String> mutationQueries = new ArrayList<>();
+
+            mutationQueries.add("uid(po) <liked_by> uid(pe) .");
+
+            String joinedQueries = String.join("\n", mutationQueries);
+
+            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                    .build();
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .addMutations(mu)
+                    .setCommitNow(false)
+                    .build();
+            txn.doRequest(request);
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ImmutableMap.of();
+
     }
 
     @Override
     public Map<String, Object> pmp2(Map<String, Object> parameters) {
-        return null;
+        final Transaction txn = startTransaction();
+
+        long firstRead = -1;
+        long secondRead = -1;
+
+        try {
+            String query = "{\n" +
+                    "  all(func: eq(id, \"$postId\")) @filter(type(Post)) {\n" +
+                    "    liked_by @filter(type(Person)) {\n" +
+                    "       totalPeople: count(uid)\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}";
+            query = query.replace("$postId", String.valueOf(parameters.get("postId")));
+
+            DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .setCommitNow(false)
+                    .build();
+            DgraphProto.Response response1 = txn.doRequest(request);
+
+            PmpResponse pmpResponse1 = gson.fromJson(response1.getJson().toStringUtf8(), PmpResponse.class);
+
+            if (pmpResponse1.all.isEmpty()) throw new IllegalStateException("PMP result1 empty");
+
+            firstRead = Long.parseLong(pmpResponse1.all.get(0).liked_by.get(0).totalPeople);
+
+            sleep((Long) parameters.get("sleepTime"));
+
+            DgraphProto.Request request2 = DgraphProto.Request.newBuilder()
+                    .setQuery(query)
+                    .setCommitNow(false)
+                    .build();
+            DgraphProto.Response response2 = txn.doRequest(request2);
+
+            PmpResponse pmpResponse2 = gson.fromJson(response2.getJson().toStringUtf8(), PmpResponse.class);
+
+            if (pmpResponse2.all.isEmpty()) throw new IllegalStateException("PMP result2 empty");
+
+            secondRead = Long.parseLong(pmpResponse2.all.get(0).liked_by.get(0).totalPeople);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
     }
 
     @Override
