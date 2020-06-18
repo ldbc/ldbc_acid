@@ -1428,7 +1428,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
             ArrayList<String> mutationQueries = new ArrayList<>();
 
-            mutationQueries.add("uid(p1) <value> nextValue .");
+            mutationQueries.add("uid(p1) <value> val(nextValue) .");
 
             String joinedQueries = String.join("\n", mutationQueries);
 
