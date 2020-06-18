@@ -43,9 +43,9 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
         Connection conn = ds.getConnection();
         conn.setAutoCommit(false);
 
-        conn.createStatement().executeUpdate(PostgresQueries.isolation_serializable);
+        //conn.createStatement().executeUpdate(PostgresQueries.isolation_serializable);
         //conn.createStatement().executeUpdate(PostgresQueries.isolation_repetable_read);
-        //conn.createStatement().executeUpdate(PostgresQueries.isolation_read_committed);
+        conn.createStatement().executeUpdate(PostgresQueries.isolation_read_committed);
 
         return conn;
     }
