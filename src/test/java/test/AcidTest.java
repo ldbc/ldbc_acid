@@ -24,6 +24,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
     protected TTestDriver testDriver;
     protected ExecutorService executorService = Executors.newFixedThreadPool(8);
+    private boolean printStackTrace = false;
 
     public AcidTest(TTestDriver testDriver) {
         this.testDriver = testDriver;
@@ -73,7 +74,8 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 future.get();
             } catch (Exception e) {
                 aborted++;
-                e.printStackTrace();
+                if(printStackTrace)
+                    e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
@@ -105,7 +107,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 future.get();
             } catch (Exception e) {
                 aborted++;
-                e.printStackTrace();
+                if(printStackTrace)e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
@@ -164,7 +166,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 }
             } catch (Exception e) {
                 aborted++;
-                e.printStackTrace();
+                if(printStackTrace)e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
@@ -222,7 +224,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
             } catch (Exception e) {
                 resultss.add(null);
                 aborted++;
-                e.printStackTrace();
+                if(printStackTrace)e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
@@ -373,7 +375,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 future.get();
             } catch (Exception e) {
                 aborted++;
-                e.printStackTrace();
+                if(printStackTrace)e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
