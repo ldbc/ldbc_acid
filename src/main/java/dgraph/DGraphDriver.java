@@ -93,9 +93,11 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
             DgraphProto.Request request = DgraphProto.Request.newBuilder()
                     .addMutations(mu)
-                    .setCommitNow(true)
+                    .setCommitNow(false)
                     .build();
             txn.doRequest(request);
+
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -133,6 +135,8 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                     .setCommitNow(true)
                     .build();
             txn.doRequest(request);
+
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -307,6 +311,8 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                     .setCommitNow(false)
                     .build();
             txn.doRequest(request1);
+
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -734,6 +740,8 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
         final long secondRead = Long.parseLong(response2Statistics.all.get(0).version);
 
+        commitTransaction(txn);
+
         return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
     }
 
@@ -852,6 +860,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
             if (pmpResponse2.all.isEmpty()) throw new IllegalStateException("PMP result2 empty");
 
             secondRead = Long.parseLong(pmpResponse2.all.get(0).liked_by.get(0).totalPeople);
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1036,6 +1045,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
             if (!peopleResponse2.all.get(0).knows.get(0).knows.get(0).knows.isEmpty())
                 secondRead.add(Long.valueOf(peopleResponse2.all.get(0).knows.get(0).knows.get(0).knows.get(0).version));
 
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1144,7 +1154,6 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
             txn.doRequest(request);
 
             commitTransaction(txn);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1217,6 +1226,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
             if (!peopleResponse2.all.get(0).knows.get(0).knows.get(0).knows.isEmpty())
                 secondRead.add(Long.valueOf(peopleResponse2.all.get(0).knows.get(0).knows.get(0).knows.get(0).version));
 
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1322,6 +1332,8 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 numKnowsEdges = Long.parseLong(peopleResponse.all.get(0).numKnowsEdges);
                 numFriends = Long.parseLong(peopleResponse.all.get(0).numFriendsProp);
             }
+
+            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
