@@ -9,14 +9,20 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
+import org.neo4j.driver.v1.AuthTokens;
+import org.neo4j.driver.v1.GraphDatabase;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.*;
 
 public class JanusGraphDriver extends TestDriver {
 
-    private JanusGraph graph = JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
+    //private JanusGraph graph = JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
+    private JanusGraph graph = JanusGraphFactory.open("conf/janusgraph-berkleydb.properties");
+
 
     @Override
     public JanusGraphTransaction startTransaction()  {
@@ -49,7 +55,7 @@ public class JanusGraphDriver extends TestDriver {
         commitTransaction(transaction);
 
         close();//restart connection
-        graph = JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
+        graph = JanusGraphFactory.open("conf/janusgraph-berkleydb.properties");
 
     }
 

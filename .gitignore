@@ -2,6 +2,7 @@ plugin.xml_gen
 bin/
 target/
 tmp/
+db/
 .settings/
 MANIFEST.MF_gen
 .DS_Store*
