@@ -32,7 +32,18 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
     @Before
     public void initialize() {
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         testDriver.nukeDatabase();
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Test
@@ -170,6 +181,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
+
     }
 
     @Test
@@ -263,15 +275,23 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+
+        int aborted = 0;
         for (Future<Map<String, Object>> future : futures) {
-            final Map<String, Object> results = future.get();
-            if (results.containsKey("firstRead")) {
-                final long firstRead = (long) results.get("firstRead");
-                final long secondRead = (long) results.get("secondRead");
-                System.out.printf("IMP:   %4d %4d %5b\n", firstRead, secondRead, firstRead == secondRead);
-                Assert.assertEquals(firstRead, secondRead);
+            try {
+                final Map<String, Object> results = future.get();
+                if (results.containsKey("firstRead")) {
+                    final long firstRead = (long) results.get("firstRead");
+                    final long secondRead = (long) results.get("secondRead");
+                    System.out.printf("IMP:   %4d %4d %5b\n", firstRead, secondRead, firstRead == secondRead);
+                    Assert.assertEquals(firstRead, secondRead);
+                }
+            } catch (Exception e) {
+                aborted++;
+                if(printStackTrace)e.printStackTrace();
             }
         }
+        System.out.printf("Number of aborted transactions: %d\n", aborted);
     }
 
     @Test
@@ -315,15 +335,23 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        int aborted = 0;
         for (Future<Map<String, Object>> future : futures) {
-            final Map<String, Object> results = future.get();
-            if (results.containsKey("firstRead")) {
-                final List<Long> firstRead  = ((List<Long>) results.get("firstRead"));
-                final List<Long> secondRead = ((List<Long>) results.get("secondRead"));
-                System.out.printf("FR:   %4s %4s %5b\n", firstRead, secondRead, firstRead.equals(secondRead));
-                Assert.assertEquals(firstRead, secondRead);
+            try {
+                final Map<String, Object> results = future.get();
+                if (results.containsKey("firstRead")) {
+                    final List<Long> firstRead  = ((List<Long>) results.get("firstRead"));
+                    final List<Long> secondRead = ((List<Long>) results.get("secondRead"));
+                    System.out.printf("FR:   %4s %4s %5b\n", firstRead, secondRead, firstRead.equals(secondRead));
+                    Assert.assertEquals(firstRead, secondRead);
+                }
+            } catch (Exception e) {
+                aborted++;
+                if(printStackTrace)e.printStackTrace();
             }
         }
+        System.out.printf("Number of aborted transactions: %d\n", aborted);
+
     }
 
     @Test
@@ -339,16 +367,26 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
+        int aborted = 0;
         for (Future<Map<String, Object>> future : futures) {
-            final Map<String, Object> results = future.get();
-            if (results.containsKey("firstRead")) {
-                final List<Long> firstRead  = ((List<Long>) results.get("firstRead" ));
-                final List<Long> secondRead = ((List<Long>) results.get("secondRead"));
-                System.out.printf("OTV:   %4s %4s %5b\n", firstRead, secondRead, Collections.max(firstRead) <= Collections.min(secondRead));
+            try {
+                final Map<String, Object> results = future.get();
+                if (results.containsKey("firstRead")) {
+                    final List<Long> firstRead  = ((List<Long>) results.get("firstRead" ));
+                    final List<Long> secondRead = ((List<Long>) results.get("secondRead"));
+                    System.out.printf("OTV:   %4s %4s %5b\n", firstRead, secondRead, Collections.max(firstRead) <= Collections.min(secondRead));
 
-                Assert.assertTrue(Collections.max(firstRead) <= Collections.min(secondRead));
+                    Assert.assertTrue(Collections.max(firstRead) <= Collections.min(secondRead));
+                }
+            } catch (Exception e) {
+                aborted++;
+                if(printStackTrace)e.printStackTrace();
             }
         }
+        System.out.printf("Number of aborted transactions: %d\n", aborted);
+
+
+
     }
 
     @Test

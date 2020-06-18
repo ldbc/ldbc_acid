@@ -26,7 +26,10 @@ public class JanusGraphDriver extends TestDriver {
 
     @Override
     public JanusGraphTransaction startTransaction()  {
-        return graph.newTransaction();
+        JanusGraphTransaction t= graph.newTransaction();
+        t.configuration().addProperty("LOCK_TIMEOUT",400000);
+        t.configuration().addProperty("timeoutMillis",400000);
+        return t;
     }
 
     @Override
@@ -43,19 +46,22 @@ public class JanusGraphDriver extends TestDriver {
 
     @Override
     public void close()  {
-        graph.close();
+        //graph.close();
     }
 
 
     @Override
     public void nukeDatabase() {
-        JanusGraphTransaction transaction = startTransaction();
+        //close();//restart connection
+        //graph = JanusGraphFactory.open("conf/janusgraph-berkleydb.properties");
+        JanusGraphTransaction transaction = graph.newTransaction();
         GraphTraversalSource g = transaction.traversal();
         g.V().drop().iterate(); //drop all vertices
         commitTransaction(transaction);
+        //close();//restart connection
+        //graph = JanusGraphFactory.open("conf/janusgraph-berkleydb.properties");
 
-        close();//restart connection
-        graph = JanusGraphFactory.open("conf/janusgraph-berkleydb.properties");
+
 
     }
 
