@@ -8,9 +8,10 @@ public final class PostgresQueries {
     public final static String[] tablesCreate = {
             "create table if not exists forum ( id bigint not null, moderatorid bigint )"
             , "create table if not exists post ( id bigint not null, forumid bigint )"
-            , "create table if not exists person ( id bigint not null, numfriends bigint, value bigint, version bigint, versionHistory bigint[], name varchar, emails varchar[] )"
+            , "create table if not exists person ( id bigint not null, numFriends bigint, value bigint, version bigint, versionHistory bigint[], name varchar, emails varchar[] )"
             , "create table if not exists likes ( personid bigint not null, postid bigint not null )"
             , "create table if not exists knows ( person1id bigint not null, person2id bigint not null, creationDate varchar, versionHistory bigint[])"
+            , "create sequence if not exists id_seq increment by -1 start -1"
     };
 
     // SQL TRUNCATE does not work az nukeDatabase is also run before CREATEs
@@ -117,6 +118,25 @@ public final class PostgresQueries {
             "and p1.id not in (p2.id, p3.id, p4.id) " +
             "and p2.id not in (p3.id, p4.id) " +
             "and p3.id <> p4.id";
+
+    public final static String[] frInit = {
+            "insert into person (id, version) values (1, 0), (2, 0), (3, 0), (4, 0)"
+            , "insert into knows (person1id, person2id) values (1, 2), (2, 3), (3, 4), (4, 1)"
+            , "insert into knows (person2id, person1id) values (1, 2), (2, 3), (3, 4), (4, 1)"
+    };
+
+    public final static String[] luInit = {"insert into person (id, numFriends) values (1, 0)"};
+    public final static String[] lu1 = {
+            "with p2 as (insert into person (id, numFriends) values (nextval('id_seq'), 0) returning id) " +
+                    ", p1 as (update person set numFriends = numFriends + 1 where id = 1 returning id, numFriends) " +
+                    "insert into knows (person1id, person2id) " +
+                    "select p1.id, p2.id from p1, p2" // union select p2.id, p1.id from p1, p2"
+    };
+    public final static String lu2 = "select count(kp2.person2id) as numKnowsEdges, p1.numFriends as numFriends " +
+            "from person p1 left join " +
+            "(knows k  inner join person p2 on (k.person2id = p2.id)) kp2 on (p1.id = kp2.person1id) " +
+            "where p1.id = $personId " +
+            "group by p1.id, p1.numFriends";
 
     public final static String[] wsInit = { "insert into person (id, value) values ($person1Id, 70), ($person2Id, 80)" };
     public final static String ws1query = "select p1,id, p2.id from person p1, person p2 where p1.id = $persion1Id and p2.id = $person2Id and p1.value + p2.value < 100";

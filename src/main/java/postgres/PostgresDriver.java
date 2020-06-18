@@ -43,9 +43,9 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
         Connection conn = ds.getConnection();
         conn.setAutoCommit(false);
 
-        //conn.createStatement().executeUpdate(PostgresQueries.isolation_serializable);
+        conn.createStatement().executeUpdate(PostgresQueries.isolation_serializable);
         //conn.createStatement().executeUpdate(PostgresQueries.isolation_repetable_read);
-        conn.createStatement().executeUpdate(PostgresQueries.isolation_read_committed);
+        //conn.createStatement().executeUpdate(PostgresQueries.isolation_read_committed);
 
         return conn;
     }
@@ -468,7 +468,8 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public void frInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.frInit);
     }
 
     @Override
@@ -483,17 +484,39 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public void luInit() {
-
+        createSchema();
+        executeUpdates(PostgresQueries.luInit);
     }
 
     @Override
     public Map<String, Object> lu1(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            executeUpdates(conn, PostgresQueries.lu1, parameters, true);
+
+            return ImmutableMap.of();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
     public Map<String, Object> lu2(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet result = runQuery(conn, PostgresQueries.lu2, parameters);
+            if (!result.next()) throw new IllegalStateException("LU2 result empty");
+            long numKnowsEdges = result.getLong(1);
+            long numFriends = result.getLong(2);
+
+            return ImmutableMap.of("numKnowsEdges", numKnowsEdges, "numFriendsProp", numFriends);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
