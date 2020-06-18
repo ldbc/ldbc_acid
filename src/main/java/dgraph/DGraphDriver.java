@@ -1257,43 +1257,37 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
         final Transaction txn = startTransaction();
 
-        try {
+        String query = "{\n" +
+                "    all(func: eq(id, \"$person1Id\")) @filter(type(Person)) {\n" +
+                "      p1 as uid\n" +
+                "      prevNumFriends as numFriends\n" +
+                "      newNumFriends: nextNumFriends as math(prevNumFriends + 1)\n" +
+                "    }\n" +
+                "  }";
 
-            String query = "{\n" +
-                    "    all(func: eq(id, \"$person1Id\")) @filter(type(Person)) {\n" +
-                    "      p1 as uid\n" +
-                    "      prevNumFriends as numFriends\n" +
-                    "      newNumFriends: nextNumFriends as math(prevNumFriends + 1)\n" +
-                    "    }\n" +
-                    "  }";
+        query = query.replace("$person1Id", String.valueOf(parameters.get("person1Id")));
 
-            query = query.replace("$person1Id", String.valueOf(parameters.get("person1Id")));
+        ArrayList<String> mutationQueries = new ArrayList<>();
 
-            ArrayList<String> mutationQueries = new ArrayList<>();
+        mutationQueries.add("_:p2 <dgraph.type> \"Person\" .");
+        mutationQueries.add("_:p2 <id> \"$person2Id\" .".replace("$person2Id", String.valueOf(parameters.get("person2Id"))));
+        mutationQueries.add("uid(p1) <knows> _:p2 .");
+        mutationQueries.add("uid(p1) <numFriends> val(nextNumFriends) .");
 
-            mutationQueries.add("_:p2 <dgraph.type> \"Person\" .");
-            mutationQueries.add("_:p2 <id> \"$person2Id\" .".replace("$person2Id", String.valueOf(parameters.get("person2Id"))));
-            mutationQueries.add("uid(p1) <knows> _:p2 .");
-            mutationQueries.add("uid(p1) <numFriends> val(nextNumFriends) .");
+        String joinedQueries = String.join("\n", mutationQueries);
 
-            String joinedQueries = String.join("\n", mutationQueries);
+        DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                .build();
 
-            DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
-                    .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
-                    .build();
+        DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                .setQuery(query)
+                .addMutations(mu)
+                .setCommitNow(false)
+                .build();
+        txn.doRequest(request);
 
-            DgraphProto.Request request = DgraphProto.Request.newBuilder()
-                    .setQuery(query)
-                    .addMutations(mu)
-                    .setCommitNow(false)
-                    .build();
-            txn.doRequest(request);
-
-            commitTransaction(txn);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        commitTransaction(txn);
         return ImmutableMap.of();
     }
 
@@ -1327,8 +1321,6 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 numKnowsEdges = Long.parseLong(peopleResponse.all.get(0).numKnowsEdges);
                 numFriends = Long.parseLong(peopleResponse.all.get(0).numFriendsProp);
             }
-
-            commitTransaction(txn);
         } catch (Exception e) {
             e.printStackTrace();
         }
