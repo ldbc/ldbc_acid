@@ -971,17 +971,6 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public Map<String, Object> otv2(Map<String, Object> parameters) {
-//        final org.neo4j.driver.v1.Transaction tt = startTransaction();
-//        final StatementResult result1 = tt.run("MATCH (p1:Person {id: $personId})-[:KNOWS]->(p2)-[:KNOWS]->(p3)-[:KNOWS]->(p4)-[:KNOWS]->(p1) RETURN [p1.version, p2.version, p3.version, p4.version] AS firstRead", parameters);
-//        if (!result1.hasNext()) throw new IllegalStateException("OTV2 result1 empty");
-//        final List<Object> firstRead = result1.next().get("firstRead").asList();
-//
-//        sleep((Long) parameters.get("sleepTime"));
-//
-//        final StatementResult result2 = tt.run("MATCH (p1:Person {id: $personId})-[:KNOWS]->(p2)-[:KNOWS]->(p3)-[:KNOWS]->(p4)-[:KNOWS]->(p1) RETURN [p1.version, p2.version, p3.version, p4.version] AS secondRead", parameters);
-//        if (!result2.hasNext()) throw new IllegalStateException("OTV2 result2 empty");
-//        final List<Object> secondRead = result2.next().get("secondRead").asList();
-
         final Transaction txn = startTransaction();
 
         ArrayList<Long> firstRead = new ArrayList<>();
