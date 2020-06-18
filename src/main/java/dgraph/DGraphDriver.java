@@ -1407,7 +1407,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
         if (!peopleResponse.person1.isEmpty() &&
                 !peopleResponse.person2.isEmpty() &&
                 (Integer.parseInt(peopleResponse.person1.get(0).value) +
-                        Integer.parseInt(peopleResponse.person2.get(0).value) < 100)) {
+                        Integer.parseInt(peopleResponse.person2.get(0).value) >= 0)) {
 
             sleep((Long) parameters.get("sleepTime"));
 
