@@ -73,6 +73,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 future.get();
             } catch (Exception e) {
                 aborted++;
+                e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
@@ -104,6 +105,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 future.get();
             } catch (Exception e) {
                 aborted++;
+                e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
@@ -162,6 +164,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 }
             } catch (Exception e) {
                 aborted++;
+                e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
@@ -219,6 +222,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
             } catch (Exception e) {
                 resultss.add(null);
                 aborted++;
+                e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
@@ -369,6 +373,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
                 future.get();
             } catch (Exception e) {
                 aborted++;
+                e.printStackTrace();
             }
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
