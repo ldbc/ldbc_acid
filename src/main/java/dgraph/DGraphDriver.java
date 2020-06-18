@@ -63,6 +63,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "versionHistory: [string] .\n" +
                 "version: int .\n" +
                 "numFriends: int .\n" +
+                "value: int .\n" +
                 "emails: [string] .";
         DgraphProto.Operation operation = DgraphProto.Operation.newBuilder().setSchema(schema).build();
         client.alter(operation);
@@ -1330,7 +1331,43 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
 
     @Override
     public void wsInit() {
+        final Transaction txn = startTransaction();
 
+        try {
+            StringBuilder finalMutation = new StringBuilder();
+            // create 10 pairs of persons with indices (1,2), ..., (19,20)
+            for (int i = 1; i <= 10; i++) {
+
+                ArrayList<String> mutationQueries = new ArrayList<>();
+
+                mutationQueries.add("_:p" + (2 *i -1) + " <dgraph.type> \"Person\" .");
+                mutationQueries.add("_:p" + (2 *i -1)+ " <id> \"$person1Id\" .".replace("$person1Id", String.valueOf(2*i-1)));
+                mutationQueries.add("_:p" + (2 *i -1) + " <value> \"70\" .");
+
+                mutationQueries.add("_:p" + 2*i + " <dgraph.type> \"Person\" .");
+                mutationQueries.add("_:p" + 2*i + " <id> \"$person2Id\" .".replace("$person2Id", String.valueOf(2*i)));
+                mutationQueries.add("_:p" + 2*i + " <value> \"80\" .");
+
+                String joinedQueries = String.join("\n", mutationQueries);
+
+                finalMutation.append(joinedQueries);
+                finalMutation.append("\n");
+
+                DgraphProto.Mutation mu = DgraphProto.Mutation.newBuilder()
+                        .setSetNquads(ByteString.copyFromUtf8(joinedQueries))
+                        .build();
+
+                DgraphProto.Request request = DgraphProto.Request.newBuilder()
+                        .addMutations(mu)
+                        .setCommitNow(false)
+                        .build();
+                txn.doRequest(request);
+            }
+
+            commitTransaction(txn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
