@@ -474,12 +474,37 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
     @Override
     public Map<String, Object> fr1(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            executeUpdates(conn, PostgresQueries.fr1, parameters, true);
+
+            return ImmutableMap.of();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
     public Map<String, Object> fr2(Map<String, Object> parameters) {
-        return null;
+        try (Connection conn = startTransaction()) {
+            final ResultSet result1 = runQuery(conn, PostgresQueries.fr2, parameters);
+            if (!result1.next()) throw new IllegalStateException("FR2 result1 empty");
+            final List<Object> firstRead = toObjectList((Object[])result1.getArray(3).getArray());
+
+            sleep((Long) parameters.get("sleepTime"));
+
+            final ResultSet result2 = runQuery(conn, PostgresQueries.fr2, parameters);
+            if (!result1.next()) throw new IllegalStateException("FR2 result2 empty");
+            final List<Object> secondRead = toObjectList((Object[])result2.getArray(3).getArray());
+
+            return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

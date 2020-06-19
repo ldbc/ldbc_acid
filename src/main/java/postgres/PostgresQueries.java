@@ -122,8 +122,36 @@ public final class PostgresQueries {
     public final static String[] frInit = {
             "insert into person (id, version) values (1, 0), (2, 0), (3, 0), (4, 0)"
             , "insert into knows (person1id, person2id) values (1, 2), (2, 3), (3, 4), (4, 1)"
-            , "insert into knows (person2id, person1id) values (1, 2), (2, 3), (3, 4), (4, 1)"
+            // all queries regard knows relationships as directed
+            // , "insert into knows (person2id, person1id) values (1, 2), (2, 3), (3, 4), (4, 1)"
     };
+    public final static String[] fr1 = {
+            "with " +
+                    "path as (select p1.id as p1id, p2.id as p2id, p3.id as p3id, p4.id as p4id " +
+                    "from person p1, person p2, person p3, person p4, knows k1, knows k2, knows k3, knows k4 " +
+                    "where p1.id = $personId and p1.id = k1.person1id and k1.person2id = p2.id and p2.id = k2.person1id and k2.person2id = p3.id and p3.id = k3.person1id and k3.person2id = p4.id and p4.id = k4.person1id and k4.person2id = p1.id " +
+                    "and p1.id not in (p2.id, p3.id, p4.id) and p2.id not in (p3.id, p4.id) and p3.id <> p4.id)" +
+                    ", affectedPerson as (select p.id as apid, count(*) as times " +
+                    "from person p, path " +
+                    "where p.id in (path.p1id, path.p2id, path.p3id, path.p4id) group by p.id) " +
+                    "update person " +
+                    "set version = version + ap.times " +
+                    "from affectedPerson ap " +
+                    "where id = ap.apid"
+    };
+    public final static String fr2 = "with recursive " +
+            "path as (" +
+            "select $personId::bigint as endpoint, ARRAY[]::bigint[] nodes, ARRAY[]::bigint[] versions " +
+            "union " +
+            "select k.person2id, array_append(nodes, k.person2id), array_append(versions, p.version) " +
+            "from path, knows k, person p " +
+            "where endpoint = k.person1id and k.person2id = p.id and k.person2id <> ALL (nodes) and coalesce(array_length(nodes, 1), 0) < 4" +
+            ") " +
+            "select endpoint, nodes, versions " +
+            "from path " +
+            "where endpoint = $personId and array_length(nodes, 1) is not null"
+            ;
+
 
     public final static String[] luInit = {"insert into person (id, numFriends) values (1, 0)"};
     public final static String[] lu1 = {
