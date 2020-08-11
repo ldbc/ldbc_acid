@@ -5,8 +5,7 @@
 * Neo4j
 * Memgraph
 * Dgraph
-* JanusGraph (various backend)
-* TigerGraph [?]
+* JanusGraph (various backends)
 * PostgreSQL (various isolation levels)
 
 ## Paper
@@ -27,8 +26,8 @@ docker run -p 7474:7474 -p 7687:7687 --env=NEO4J_AUTH=none neo4j:3.5
 Bind it to `17687` to avoid a collision with Neo4j.
 
 ```bash
-wget https://download.memgraph.com/memgraph/v1.0.0/docker/memgraph-1.0.0-community-docker.tar.gz
-docker load -i memgraph-1.0.0-community-docker.tar.gz
+wget https://download.memgraph.com/memgraph/v1.1.0/docker/memgraph-1.1.0-community-docker.tar.gz
+docker load -i memgraph-1.1.0-community-docker.tar.gz
 docker run -p 17687:7687 memgraph
 ```
 
@@ -52,14 +51,8 @@ sudo snap install node --classic --channel=12
 
 ### Dgraph
 
-TODO
-
-### TigerGraph
-
-TODO
-
-```
-docker run docker.tigergraph.com/tigergraph-dev:latest
+```bash
+docker run --rm -it -p 8080:8080 -p 9080:9080 -p 8000:8000 -v ~/dgraph:/dgraph dgraph/standalone:v20.07.0
 ```
 
 ### Postgres
