@@ -156,7 +156,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> g1a1(Map<String, Object> parameters) {
+    public Map<String, Object> g1aW(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         // we cannot pass p as a parameter so we pass its internal ID instead
@@ -178,7 +178,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> g1a2(Map<String, Object> parameters) {
+    public Map<String, Object> g1aR(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         final StatementResult result = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS pVersion", parameters);
@@ -196,7 +196,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> g1b1(Map<String, Object> parameters) {
+    public Map<String, Object> g1bW(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         tt.run("MATCH (p:Person {id: $personId}) SET p.version = $even", parameters);
@@ -208,7 +208,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> g1b2(Map<String, Object> parameters) {
+    public Map<String, Object> g1bR(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         final StatementResult result = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS pVersion", parameters);
@@ -250,7 +250,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> imp1(Map<String, Object> parameters) {
+    public Map<String, Object> impW(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         tt.run("MATCH (p:Person {id: $personId}) SET p.version = p.version + 1 RETURN p", parameters);
         commitTransaction(tt);
@@ -258,7 +258,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> imp2(Map<String, Object> parameters) {
+    public Map<String, Object> impR(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         final StatementResult result1 = tt.run("MATCH (p:Person {id: $personId}) RETURN p.version AS firstRead", parameters);
@@ -284,7 +284,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> pmp1(Map<String, Object> parameters) {
+    public Map<String, Object> pmpW(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         tt.run("MATCH (pe:Person {id: $personId}), (po:Post {id: $postId}) CREATE (pe)-[:LIKES]->(po)", parameters);
         commitTransaction(tt);
@@ -292,7 +292,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> pmp2(Map<String, Object> parameters) {
+    public Map<String, Object> pmpR(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         final StatementResult result1 = tt.run("MATCH (po1:Post {id: $postId})<-[:LIKES]-(pe1:Person) RETURN count(pe1) AS firstRead", parameters);
@@ -319,7 +319,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> otv1(Map<String, Object> parameters) {
+    public Map<String, Object> otvW(Map<String, Object> parameters) {
         Random random = new Random();
         for (int i = 0; i < 100; i++) {
             long personId  = random.nextInt((int) parameters.get("cycleSize")+1);
@@ -338,7 +338,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> otv2(Map<String, Object> parameters) {
+    public Map<String, Object> otvR(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         final StatementResult result1 = tt.run("MATCH (p1:Person {id: $personId})-[:KNOWS]->(p2)-[:KNOWS]->(p3)-[:KNOWS]->(p4)-[:KNOWS]->(p1) RETURN [p1.version, p2.version, p3.version, p4.version] AS firstRead", parameters);
         if (!result1.hasNext()) throw new IllegalStateException("OTV2 result1 empty");
@@ -364,7 +364,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> fr1(Map<String, Object> parameters) {
+    public Map<String, Object> frW(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         tt.run("MATCH path = (p1:Person {id: $personId})-[:KNOWS]->(p2)-[:KNOWS]->(p3)-[:KNOWS]->(p4)-[:KNOWS]->(p1)\n" +
                 " SET p1.version = p1.version + 1\n" +
@@ -377,7 +377,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> fr2(Map<String, Object> parameters) {
+    public Map<String, Object> frR(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         final StatementResult result1 = tt.run("MATCH path1 = (n1:Person {id: $personId})-[:KNOWS*..4]->(n1) RETURN extract(p IN nodes(path1) | p.version) AS firstRead", parameters);
@@ -403,7 +403,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> lu1(Map<String, Object> parameters) {
+    public Map<String, Object> luW(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         tt.run("MATCH (p1:Person {id: 1})\n" +
                 "CREATE (p1)-[:KNOWS]->(p2)\n" +
@@ -414,7 +414,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> lu2(Map<String, Object> parameters) {
+    public Map<String, Object> luR(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         final StatementResult result = tt.run("MATCH (p:Person {id: $personId})\n" +
                 "OPTIONAL MATCH (p)-[k:KNOWS]->()\n" +
@@ -442,7 +442,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> ws1(Map<String, Object> parameters) {
+    public Map<String, Object> wsW(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
 
         // if (p1.value+p2.value < 0) then abort --> if (p1.value+p2.value >= 0) then do the update
@@ -468,7 +468,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
     }
 
     @Override
-    public Map<String, Object> ws2(Map<String, Object> parameters) {
+    public Map<String, Object> wsR(Map<String, Object> parameters) {
         final Transaction tt = startTransaction();
         // we select pairs of persons using (id, id+1) pairs
         final StatementResult result = tt.run("MATCH (p1:Person), (p2:Person {id: p1.id+1})\n" +

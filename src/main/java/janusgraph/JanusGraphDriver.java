@@ -236,7 +236,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> g1a1(Map parameters) {
+    public Map<String, Object> g1aW(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personID = (long) parameters.get("personId");
@@ -255,7 +255,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> g1a2(Map parameters) {
+    public Map<String, Object> g1aR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personID = (long) parameters.get("personId");
@@ -282,7 +282,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> g1b1(Map parameters) {
+    public Map<String, Object> g1bW(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personID  = (long) parameters.get("personId");
@@ -303,7 +303,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> g1b2(Map parameters) {
+    public Map<String, Object> g1bR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personID = (long) parameters.get("personId");
@@ -366,7 +366,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> imp1(Map parameters) {
+    public Map<String, Object> impW(Map parameters) {
 
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
@@ -385,7 +385,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> imp2(Map parameters) {
+    public Map<String, Object> impR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personID  = (long) parameters.get("personId");
@@ -410,7 +410,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> pmp1(Map parameters) {
+    public Map<String, Object> pmpW(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personID  = (long) parameters.get("personId");
@@ -430,7 +430,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> pmp2(Map parameters) {
+    public Map<String, Object> pmpR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long postID       = (long) parameters.get("postId");
@@ -459,7 +459,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object>  lu1(Map parameters) {
+    public Map<String, Object> luW(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long person1Id    = (long) parameters.get("person1Id");
@@ -481,7 +481,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> lu2(Map parameters) {
+    public Map<String, Object> luR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personId    = (long) parameters.get("personId");
@@ -522,7 +522,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> otv1(Map parameters) {
+    public Map<String, Object> otvW(Map parameters) {
         Random random = new Random();
         for (int i = 0; i < 100; i++) {
             JanusGraphTransaction transaction = startTransaction();
@@ -543,7 +543,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> otv2(Map parameters) {
+    public Map<String, Object> otvR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personId    = (int) parameters.get("personId");
@@ -597,7 +597,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> fr1(Map parameters) {
+    public Map<String, Object> frW(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personId    = (long) parameters.get("personId");
@@ -615,7 +615,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> fr2(Map parameters) {
+    public Map<String, Object> frR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personId    = (long) parameters.get("personId");
@@ -667,7 +667,7 @@ public class JanusGraphDriver extends TestDriver {
     }
 
     @Override
-    public Map<String, Object> ws1(Map parameters) {
+    public Map<String, Object> wsW(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         long personId    = (long) parameters.get("personId");
@@ -695,7 +695,7 @@ public class JanusGraphDriver extends TestDriver {
 
 
     @Override
-    public Map<String, Object> ws2(Map parameters) {
+    public Map<String, Object> wsR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
         if (g.V().hasLabel("Forum").hasNext()) {

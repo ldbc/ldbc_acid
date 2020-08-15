@@ -372,7 +372,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> g1a1(Map<String, Object> parameters) {
+    public Map<String, Object> g1aW(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         String queryLookup = "{\n" +
@@ -423,7 +423,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> g1a2(Map<String, Object> parameters) {
+    public Map<String, Object> g1aR(Map<String, Object> parameters) {
         String queryLookup = "{\n" +
                 "  all(func: eq(id, \"$personId\")) {\n" +
                 "    version\n" +
@@ -471,7 +471,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> g1b1(Map<String, Object> parameters) {
+    public Map<String, Object> g1bW(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         try {
@@ -528,7 +528,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> g1b2(Map<String, Object> parameters) {
+    public Map<String, Object> g1bR(Map<String, Object> parameters) {
         String queryLookup = "{\n" +
                 "  all(func: eq(id, \"$personId\")) {\n" +
                 "    version\n" +
@@ -661,7 +661,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> imp1(Map<String, Object> parameters) {
+    public Map<String, Object> impW(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         try {
@@ -701,7 +701,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> imp2(Map<String, Object> parameters) {
+    public Map<String, Object> impR(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         String queryLookup = "{\n" +
@@ -773,7 +773,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> pmp1(Map<String, Object> parameters) {
+    public Map<String, Object> pmpW(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         try {
@@ -816,7 +816,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> pmp2(Map<String, Object> parameters) {
+    public Map<String, Object> pmpR(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         long firstRead = -1;
@@ -912,7 +912,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> otv1(Map<String, Object> parameters) {
+    public Map<String, Object> otvW(Map<String, Object> parameters) {
 
         try {
             Random random = new Random();
@@ -978,7 +978,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> otv2(Map<String, Object> parameters) {
+    public Map<String, Object> otvR(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         ArrayList<Long> firstRead = new ArrayList<>();
@@ -1097,7 +1097,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> fr1(Map<String, Object> parameters) {
+    public Map<String, Object> frW(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         try {
@@ -1159,7 +1159,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> fr2(Map<String, Object> parameters) {
+    public Map<String, Object> frR(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         ArrayList<Long> firstRead = new ArrayList<>();
@@ -1261,7 +1261,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> lu1(Map<String, Object> parameters) {
+    public Map<String, Object> luW(Map<String, Object> parameters) {
 
         final Transaction txn = startTransaction();
 
@@ -1300,7 +1300,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> lu2(Map<String, Object> parameters) {
+    public Map<String, Object> luR(Map<String, Object> parameters) {
 
         final Transaction txn = startTransaction();
 
@@ -1376,7 +1376,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> ws1(Map<String, Object> parameters) {
+    public Map<String, Object> wsW(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
     
         String query = "{\n" +
@@ -1447,7 +1447,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     }
 
     @Override
-    public Map<String, Object> ws2(Map<String, Object> parameters) {
+    public Map<String, Object> wsR(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
 
         long p1id;

@@ -70,7 +70,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         final int nTransactions = 200;
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < nTransactions; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::lu1, ImmutableMap.of("person1Id", 1L,"person2Id",(i+2L))));
+            clients.add(new TransactionThread<>(i, testDriver::luW, ImmutableMap.of("person1Id", 1L,"person2Id",(i+2L))));
         }
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
         int aborted = 0;
@@ -85,7 +85,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
 
-        Map<String, Object> results = testDriver.lu2(ImmutableMap.of("personId", 1L));
+        Map<String, Object> results = testDriver.luR(ImmutableMap.of("personId", 1L));
         final long numFriendsProp = (long) results.get("numFriendsProp");
         final long numKnowsEdges = (long) results.get("numKnowsEdges");
         final boolean pass = ((nTransactions-aborted == numFriendsProp) && (nTransactions-aborted == numKnowsEdges));
@@ -152,10 +152,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < wc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::g1a1, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
+            clients.add(new TransactionThread<>(i, testDriver::g1aW, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
         }
         for (int i = 0; i < rc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::g1a2, ImmutableMap.of("personId", 1L)));
+            clients.add(new TransactionThread<>(i, testDriver::g1aR, ImmutableMap.of("personId", 1L)));
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
@@ -186,10 +186,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < wc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::g1b1, ImmutableMap.of("personId", 1L, "even", 0L, "odd", 1L, "sleepTime", 1L)));
+            clients.add(new TransactionThread<>(i, testDriver::g1bW, ImmutableMap.of("personId", 1L, "even", 0L, "odd", 1L, "sleepTime", 1L)));
         }
         for (int i = 0; i < rc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::g1b2, ImmutableMap.of("personId", 1L)));
+            clients.add(new TransactionThread<>(i, testDriver::g1bR, ImmutableMap.of("personId", 1L)));
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
@@ -262,10 +262,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < wc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::imp1, ImmutableMap.of("personId", 1L)));
+            clients.add(new TransactionThread<>(i, testDriver::impW, ImmutableMap.of("personId", 1L)));
         }
         for (int i = 0; i < rc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::imp2, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
+            clients.add(new TransactionThread<>(i, testDriver::impR, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
@@ -296,10 +296,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < wc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::pmp1, ImmutableMap.of("personId", 1L, "postId", 1L)));
+            clients.add(new TransactionThread<>(i, testDriver::pmpW, ImmutableMap.of("personId", 1L, "postId", 1L)));
         }
         for (int i = 0; i < rc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::pmp2, ImmutableMap.of("personId", 1L, "postId", 1L, "sleepTime", 250L)));
+            clients.add(new TransactionThread<>(i, testDriver::pmpR, ImmutableMap.of("personId", 1L, "postId", 1L, "sleepTime", 250L)));
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
@@ -322,10 +322,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < wc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::fr1, ImmutableMap.of("personId", 1L)));
+            clients.add(new TransactionThread<>(i, testDriver::frW, ImmutableMap.of("personId", 1L)));
         }
         for (int i = 0; i < rc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::fr2, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
+            clients.add(new TransactionThread<>(i, testDriver::frR, ImmutableMap.of("personId", 1L, "sleepTime", 250L)));
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
@@ -354,10 +354,10 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         final int rc = 50;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
-        clients.add(new TransactionThread<>(0, testDriver::otv1, ImmutableMap.of("cycleSize", 4)));
+        clients.add(new TransactionThread<>(0, testDriver::otvW, ImmutableMap.of("cycleSize", 4)));
         Random random = new Random();
         for (int i = 0; i < rc; i++) {
-            clients.add(new TransactionThread<>(i, testDriver::otv2, ImmutableMap.of("personId", random.nextInt(4)+1, "sleepTime", 250L)));
+            clients.add(new TransactionThread<>(i, testDriver::otvR, ImmutableMap.of("personId", random.nextInt(4)+1, "sleepTime", 250L)));
         }
 
         final List<Future<Map<String, Object>>> futures = executorService.invokeAll(clients);
@@ -396,7 +396,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
             // person1 indices range from 1 to 2*numPersonPairs+1
             long person1Id = random.nextInt(numPersonPairs)*2+1;
             long person2Id = person1Id + 1;
-            clients.add(new TransactionThread<>(i, testDriver::ws1,
+            clients.add(new TransactionThread<>(i, testDriver::wsW,
                     ImmutableMap.of("person1Id", person1Id, "person2Id", person2Id, "sleepTime", 250L)));
         }
 
@@ -412,7 +412,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
         }
         System.out.printf("Number of aborted transactions: %d\n", aborted);
 
-        Map<String, Object> results = testDriver.ws2(ImmutableMap.of());
+        Map<String, Object> results = testDriver.wsR(ImmutableMap.of());
         System.out.println(results);
 
         Assert.assertTrue(results.isEmpty());
