@@ -17,7 +17,7 @@ import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.outE;
 public class JanusGraphDriver extends TestDriver {
 
     //private JanusGraph graph = JanusGraphFactory.open("conf/janusgraph-cassandra-es-server.properties");
-    private JanusGraph graph = JanusGraphFactory.open("conf/janusgraph-berkleydb.properties");
+    private JanusGraph graph = JanusGraphFactory.open("conf/janusgraph-berkeleydb.properties");
 
 
     @Override
@@ -49,13 +49,13 @@ public class JanusGraphDriver extends TestDriver {
     @Override
     public void nukeDatabase() {
         //close();//restart connection
-        //graph = JanusGraphFactory.open("conf/janusgraph-berkleydb.properties");
+        //graph = JanusGraphFactory.open("conf/janusgraph-berkeleydb.properties");
         JanusGraphTransaction transaction = graph.newTransaction();
         GraphTraversalSource g = transaction.traversal();
         g.V().drop().iterate(); //drop all vertices
         commitTransaction(transaction);
         //close();//restart connection
-        //graph = JanusGraphFactory.open("conf/janusgraph-berkleydb.properties");
+        //graph = JanusGraphFactory.open("conf/janusgraph-berkeleydb.properties");
 
 
 
