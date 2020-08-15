@@ -2,13 +2,7 @@ package bolt;
 
 import com.google.common.collect.ImmutableMap;
 import driver.TestDriver;
-import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Record;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Transaction;
-import org.neo4j.driver.v1.Value;
+import org.neo4j.driver.v1.*;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

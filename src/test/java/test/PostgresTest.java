@@ -1,17 +1,14 @@
 package test;
 
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import postgres.PostgresDriver;
 import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres;
 import ru.yandex.qatools.embed.postgresql.config.PostgresConfig;
 
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Optional;
 
-import static ru.yandex.qatools.embed.postgresql.distribution.Version.Main.*;
+import static ru.yandex.qatools.embed.postgresql.distribution.Version.Main.V9_6;
 
 public class PostgresTest extends AcidTest<PostgresDriver> {
 
