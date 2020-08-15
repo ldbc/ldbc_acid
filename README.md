@@ -17,8 +17,14 @@
 
 ### Neo4j
 
+Version 3.5.x:
 ```bash
-docker run -p 7474:7474 -p 7687:7687 --env=NEO4J_AUTH=none neo4j:3.5
+docker run -p 7474:7474 -p 7687:7687 --env=NEO4J_AUTH=none neo4j:3.5.20
+```
+
+Version 4.1.x:
+```bash
+docker run -p 7474:7474 -p 7687:7687 --env=NEO4J_AUTH=none neo4j:4.1.1
 ```
 
 ### Memgraph
