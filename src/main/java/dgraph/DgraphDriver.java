@@ -16,13 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, DgraphProto.Response> {
+public class DgraphDriver extends TestDriver<Transaction, Map<String, String>, DgraphProto.Response> {
 
     protected DgraphClient client;
     protected Gson gson = new Gson();
     protected ManagedChannel channel;
 
-    public DGraphDriver() {
+    public DgraphDriver() {
         channel = ManagedChannelBuilder
                 .forAddress("localhost", 9080)
                 .usePlaintext().build();
