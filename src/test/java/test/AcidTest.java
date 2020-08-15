@@ -187,7 +187,7 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void g1bTest() throws Exception {
         testDriver.g1bInit();
-        final int wc = 1;
+        final int wc = 10;
         final int rc = 100;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
@@ -263,8 +263,8 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void impTest() throws Exception {
         testDriver.impInit();
-        final int wc = 1;
-        final int rc = 1;
+        final int wc = 10;
+        final int rc = 10;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < wc; i++) {
@@ -297,8 +297,8 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     @Test
     public void pmpTest() throws Exception {
         testDriver.pmpInit();
-        final int wc = 1;
-        final int rc = 1;
+        final int wc = 10;
+        final int rc = 10;
 
         List<TransactionThread<Map<String, Object>, Map<String, Object>>> clients = new ArrayList<>();
         for (int i = 0; i < wc; i++) {
