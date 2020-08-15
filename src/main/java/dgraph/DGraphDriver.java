@@ -380,7 +380,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "    uid\n" +
                 "  }\n" +
                 "}";
-        queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("person1Id")));
+        queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("personId")));
 
         DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
 
@@ -394,7 +394,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "  }\n" +
                 "}";
 
-        query = query.replace("$personId", String.valueOf(parameters.get("person1Id")));
+        query = query.replace("$personId", String.valueOf(parameters.get("personId")));
 
         sleep((Long) parameters.get("sleepTime"));
 
@@ -429,7 +429,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 "    version\n" +
                 "  }\n" +
                 "}";
-        queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("person1Id")));
+        queryLookup = queryLookup.replace("$personId", String.valueOf(parameters.get("personId")));
 
         DgraphProto.Response response = client.newReadOnlyTransaction().query(queryLookup);
 
