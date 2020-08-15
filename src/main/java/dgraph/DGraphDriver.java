@@ -10,9 +10,6 @@ import io.dgraph.DgraphProto;
 import io.dgraph.Transaction;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.neo4j.driver.v1.Record;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Value;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1381,7 +1378,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
     @Override
     public Map<String, Object> ws1(Map<String, Object> parameters) {
         final Transaction txn = startTransaction();
-
+    
         String query = "{\n" +
                 "  \n" +
                 "  person1(func: eq(id, \"$person1Id\")) @filter(type(Person)) {\n" +
