@@ -1399,7 +1399,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 .build();
         DgraphProto.Response response1 = txn.doRequest(request1);
 
-        Ws1Response peopleResponse = gson.fromJson(response1.getJson().toStringUtf8(), Ws1Response.class);
+        WsWResponse peopleResponse = gson.fromJson(response1.getJson().toStringUtf8(), WsWResponse.class);
 
         if (!peopleResponse.person1.isEmpty() &&
                 !peopleResponse.person2.isEmpty() &&
@@ -1475,7 +1475,7 @@ public class DGraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 .build();
         DgraphProto.Response response1 = txn.doRequest(request1);
 
-        Ws1Response peopleResponse = gson.fromJson(response1.getJson().toStringUtf8(), Ws1Response.class);
+        WsWResponse peopleResponse = gson.fromJson(response1.getJson().toStringUtf8(), WsWResponse.class);
 
         commitTransaction(txn);
 
