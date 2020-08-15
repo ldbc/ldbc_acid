@@ -56,9 +56,5 @@ dependencies {
     compile group: 'ru.yandex.qatools.embed', name: 'postgresql-embedded', version: '2.10'
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.14'
 
-    // TigerGraph
-    // dependency seems unmaintained
-    compile group: 'com.tigergraph.client', name: 'gsql_client', version: '2.5.2'
-
     testCompile 'junit:junit:4.12'
 }
