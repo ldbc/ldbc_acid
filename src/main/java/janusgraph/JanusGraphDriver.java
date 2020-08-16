@@ -12,6 +12,7 @@ import org.janusgraph.core.JanusGraphTransaction;
 
 import java.util.*;
 
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.V;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.outE;
 
 public class JanusGraphDriver extends TestDriver {
@@ -647,22 +648,14 @@ public class JanusGraphDriver extends TestDriver {
     public void wsInit() {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
-        Vertex person1 = g.addV("Person").next();
-        Vertex person2 = g.addV("Person").next();
-        Vertex person3 = g.addV("Person").next();
-        Vertex person4 = g.addV("Person").next();
-        person1.property("id",1L);
-        person2.property("id",2L);
-        person3.property("id",3L);
-        person4.property("id",4L);
-        Vertex forum1 = g.addV("Forum").next();
-        Vertex forum2 = g.addV("Forum").next();
-        Vertex forum3 = g.addV("Forum").next();
-        Vertex forum4 = g.addV("Forum").next();
-        forum1.property("id",1L);
-        forum2.property("id",2L);
-        forum3.property("id",3L);
-        forum4.property("id",4L);
+        for(int i =1;i<21;i++) {
+            Vertex person = g.addV("Person").next();
+            person.property("id", i);
+            if(i%2==0)
+                person.property("value", 80);
+            else
+                person.property("value", 70);
+        }
         commitTransaction(transaction);
     }
 
@@ -670,23 +663,25 @@ public class JanusGraphDriver extends TestDriver {
     public Map<String, Object> wsW(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
-        long personId    = (long) parameters.get("personId");
-        long forumId    = (long) parameters.get("forumId");
+        long person1Id    = (long) parameters.get("person1Id");
+        long person2Id    = (long) parameters.get("person2Id");
         long sleepTime    = (long) parameters.get("sleepTime");
-        if (g.V().hasLabel("Forum").has("id", forumId).hasNext()) {
-            if(!(g.V().hasLabel("Forum").has("id", forumId).outE("HAS_MODERATOR").hasNext())){
+        if ((g.V().hasLabel("Person").has("id", person1Id).hasNext()) &&
+            (g.V().hasLabel("Person").has("id", person2Id).hasNext())) {
+            Vertex person1 = g.V().hasLabel("Person").has("id", person1Id).next();
+            Vertex person2 = g.V().hasLabel("Person").has("id", person2Id).next();
+            if ((int) person1.value("value") + (int) person2.value("value") < 100)
+                abortTransaction(transaction);
+            else {
                 sleep(sleepTime);
-                Vertex person1 = g.addV("Person").next();
-                person1.property("id",1L);
-                //Vertex person = g.V().hasLabel("Person").has("id", personId).next();
-               // Vertex secondPerson = g.addV("Person").next();
-               // Vertex forum4 = g.addV("Forum").next();
-
-                Vertex forum = g.V().hasLabel("Forum").has("id", forumId).next();
-                forum.addEdge("HAS_MODERATOR",person1);
+                if (new Random().nextBoolean())
+                    person1.property("value",(int) person1.value("value") - 100);
+                else
+                    person2.property("value",(int) person2.value("value") - 100);
                 transaction.commit();
             }
         }
+
         else
             throw new IllegalStateException("WS1 Person Missing from Graph");
 
@@ -698,16 +693,20 @@ public class JanusGraphDriver extends TestDriver {
     public Map<String, Object> wsR(Map parameters) {
         JanusGraphTransaction transaction = startTransaction();
         GraphTraversalSource g = transaction.traversal();
-        if (g.V().hasLabel("Forum").hasNext()) {
-                List<Edge> edges = g.V().hasLabel("Forum").outE("HAS_MODERATOR").next(100);
-                ArrayList<Long> forumIDs = new ArrayList<>();
-                for(Edge edge: edges) {
-                    long forumId = edge.inVertex().value("id");
-                    if(forumIDs.contains(forumId)){
-                        commitTransaction(transaction);
-                        return ImmutableMap.of("forumId", forumId, "modCount", 2);
+        System.out.println("hello2");
+        if (g.V().hasLabel("Person").hasNext()) {
+                List<Vertex> vertices = g.V().hasLabel("person").next(20);
+                for(Vertex person1: vertices) {
+                    long personID = person1.value("id");
+                    System.out.println(personID);
+                    if (g.V().hasLabel("Person").property("id",personID+1).hasNext()) {
+                        System.out.println("hello");
+                        Vertex person2 = g.V().hasLabel("Person").property("id",personID+1).next();
+                        if ((int) person1.value("value")+(int) person2.value("value")<=0) {
+                            commitTransaction(transaction);
+                            return ImmutableMap.of("person1ID", personID, "person2ID", personID+1);
+                        }
                     }
-                    forumIDs.add(edge.inVertex().value("id"));
                 }
                 commitTransaction(transaction);
                 return ImmutableMap.of();
