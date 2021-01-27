@@ -1,5 +1,7 @@
 # LDBC ACID tests
 
+[TPCTC 2020 paper (preprint PDF)](http://mit.bme.hu/~szarnyas/ldbc/ldbc-acid-tpctc2020-camera-ready.pdf)
+
 ## Systems
 
 * Neo4j
@@ -7,11 +9,6 @@
 * Dgraph
 * JanusGraph (various backends)
 * PostgreSQL (various isolation levels)
-
-## Paper
-
-* Source: <https://github.com/bme-db-lab/paper-snb-interactive-tpctc>
-* PDF: <https://www.db.bme.hu/paper-snb-interactive-tpctc/ms.pdf>
 
 ## Getting started
 
