@@ -557,7 +557,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> wsW(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            final ResultSet rs = runQuery(conn, PostgresQueries.ws1query, parameters);
+            final ResultSet rs = runQuery(conn, PostgresQueries.wsWquery, parameters);
 
             if (!rs.next()) {
                 sleep((Long) parameters.get("sleepTime"));
@@ -566,7 +566,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
                         (long) parameters.get("person1Id") :
                         (long) parameters.get("person2Id");
 
-                executeUpdates(conn, PostgresQueries.ws1update, ImmutableMap.of("personId", personId), true);
+                executeUpdates(conn, PostgresQueries.wsWupdate, ImmutableMap.of("personId", personId), true);
             }
             return ImmutableMap.of();
         } catch (SQLException e) {
@@ -579,7 +579,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> wsR(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            final ResultSet rs = runQuery(conn, PostgresQueries.ws2, ImmutableMap.of());
+            final ResultSet rs = runQuery(conn, PostgresQueries.wsR, ImmutableMap.of());
 
             if (rs.next()) {
                 return ImmutableMap.of(

@@ -683,7 +683,7 @@ public class JanusGraphDriver extends TestDriver {
         }
 
         else
-            throw new IllegalStateException("WS1 Person Missing from Graph");
+            throw new IllegalStateException("WS TW Person Missing from Graph");
 
         return ImmutableMap.of();
     }
@@ -712,7 +712,7 @@ public class JanusGraphDriver extends TestDriver {
                 return ImmutableMap.of();
         }
         else
-            throw new IllegalStateException("WS1 Person Missing from Graph");
+            throw new IllegalStateException("WS TR Person Missing from Graph");
 
 
     }

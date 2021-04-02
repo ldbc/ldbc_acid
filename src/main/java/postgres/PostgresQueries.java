@@ -167,9 +167,9 @@ public final class PostgresQueries {
             "group by p1.id, p1.numFriends";
 
     public final static String[] wsInit = { "insert into person (id, value) values ($person1Id, 70), ($person2Id, 80)" };
-    public final static String ws1query = "select p1,id, p2.id from person p1, person p2 where p1.id = $persion1Id and p2.id = $person2Id and p1.value + p2.value < 100";
-    public final static String[] ws1update = { "update person set value = value - 100 where id = $personId"};
-    public final static String ws2 = "select p1.id AS p1id, p1.value AS p1value, p2.id AS p2id, p2.value AS p2value " +
+    public final static String wsWquery = "select p1, id, p2.id from person p1, person p2 where p1.id = $persion1Id and p2.id = $person2Id and p1.value + p2.value < 100";
+    public final static String[] wsWupdate = { "update person set value = value - 100 where id = $personId"};
+    public final static String wsR = "select p1.id AS p1id, p1.value AS p1value, p2.id AS p2id, p2.value AS p2value " +
             "from person p1, person p2 " +
             "where p1.id+1 = p2.id " +
             "and p1.value + p2.value <= 0 ";
