@@ -2,6 +2,8 @@
 
 [TPCTC 2020 paper (preprint PDF)](http://mit.bme.hu/~szarnyas/ldbc/ldbc-acid-tpctc2020-camera-ready.pdf)
 
+See the chapter on "ACID tests" in the [LDBC SNB specification](https://ldbc.github.io/ldbc_snb_docs/ldbc-snb-specification.pdf)
+
 ## Systems
 
 * Neo4j
