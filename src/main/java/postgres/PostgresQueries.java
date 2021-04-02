@@ -79,22 +79,22 @@ public final class PostgresQueries {
     public final static String g1c2 = "select version as person2Version from person where id = $person2Id";
 
     public final static String[] impInit = { "insert into person (id, version) values (1, 1)" };
-    public final static String[] imp1 = { "update person set version = version + 1 where id = $personId" };
-    public final static String imp2 = "select version as valueRead from person where id = $personId";
+    public final static String[] impW = { "update person set version = version + 1 where id = $personId" };
+    public final static String impR = "select version as valueRead from person where id = $personId";
 
     public final static String[] pmpInit = {
             "insert into person (id) values (1)"
             , "insert into post (id) values (1)"
     };
-    public final static String[] pmp1 = { "insert into likes (personid, postid) select pe.id, po.id from person pe, post po where pe.id = $personId and po.id = $postId" };
-    public final static String pmp2 = "select count(pe.id) as valueRead from post po, likes l, person pe where po.id = $postId and po.id = l.postid and l.personid = pe.id";
+    public final static String[] pmpW = { "insert into likes (personid, postid) select pe.id, po.id from person pe, post po where pe.id = $personId and po.id = $postId" };
+    public final static String pmpR = "select count(pe.id) as valueRead from post po, likes l, person pe where po.id = $postId and po.id = l.postid and l.personid = pe.id";
 
     public final static String[] otvInit = {
             "insert into person (id, version) values (1, 0), (2, 0), (3, 0), (4, 0)"
             , "insert into knows (person1id, person2id) values (1, 2), (2, 3), (3, 4), (4, 1)"
             , "insert into knows (person2id, person1id) values (1, 2), (2, 3), (3, 4), (4, 1)"
     };
-    public final static String otv1query =
+    public final static String otvWquery =
             "select p1.id, p2.id, p3.id, p4.id " +
                     "from person p1, person p2, person p3, person p4 " +
                     ", knows k1, knows k2, knows k3, knows k4 " +
@@ -106,8 +106,8 @@ public final class PostgresQueries {
                     "and p1.id not in (p2.id, p3.id, p4.id) " +
                     "and p2.id not in (p3.id, p4.id) " +
                     "and p3.id <> p4.id";
-    public final static String[] otv1update = { "update person set version = version + 1 where id in ($p1id, $p2id, $p3id, $p4id)" };
-    public final static String otv2 = "select p1.version, p2.version, p3.version, p4.version " +
+    public final static String[] otvWupdate = { "update person set version = version + 1 where id in ($p1id, $p2id, $p3id, $p4id)" };
+    public final static String otvR = "select p1.version, p2.version, p3.version, p4.version " +
             "from person p1, person p2, person p3, person p4 " +
             ", knows k1, knows k2, knows k3, knows k4 " +
             "where p1.id = $personId " +
@@ -125,7 +125,7 @@ public final class PostgresQueries {
             // all queries regard knows relationships as directed
             // , "insert into knows (person2id, person1id) values (1, 2), (2, 3), (3, 4), (4, 1)"
     };
-    public final static String[] fr1 = {
+    public final static String[] frW = {
             "with " +
                     "path as (select p1.id as p1id, p2.id as p2id, p3.id as p3id, p4.id as p4id " +
                     "from person p1, person p2, person p3, person p4, knows k1, knows k2, knows k3, knows k4 " +
@@ -139,7 +139,7 @@ public final class PostgresQueries {
                     "from affectedPerson ap " +
                     "where id = ap.apid"
     };
-    public final static String fr2 = "with recursive " +
+    public final static String frR = "with recursive " +
             "path as (" +
             "select $personId::bigint as endpoint, ARRAY[]::bigint[] nodes, ARRAY[]::bigint[] versions " +
             "union " +
@@ -154,13 +154,13 @@ public final class PostgresQueries {
 
 
     public final static String[] luInit = {"insert into person (id, numFriends) values (1, 0)"};
-    public final static String[] lu1 = {
+    public final static String[] luW = {
             "with p2 as (insert into person (id, numFriends) values (nextval('id_seq'), 0) returning id) " +
                     ", p1 as (update person set numFriends = numFriends + 1 where id = 1 returning id, numFriends) " +
                     "insert into knows (person1id, person2id) " +
                     "select p1.id, p2.id from p1, p2" // union select p2.id, p1.id from p1, p2"
     };
-    public final static String lu2 = "select count(kp2.person2id) as numKnowsEdges, p1.numFriends as numFriends " +
+    public final static String luR = "select count(kp2.person2id) as numKnowsEdges, p1.numFriends as numFriends " +
             "from person p1 left join " +
             "(knows k  inner join person p2 on (k.person2id = p2.id)) kp2 on (p1.id = kp2.person1id) " +
             "where p1.id = $personId " +

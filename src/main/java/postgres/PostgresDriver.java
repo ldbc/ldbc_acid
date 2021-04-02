@@ -332,7 +332,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> impW(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            executeUpdates(conn, PostgresQueries.imp1, parameters, true);
+            executeUpdates(conn, PostgresQueries.impW, parameters, true);
 
             return ImmutableMap.of();
         } catch (SQLException e) {
@@ -345,13 +345,13 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> impR(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            final ResultSet result1 = runQuery(conn, PostgresQueries.imp2, parameters);
+            final ResultSet result1 = runQuery(conn, PostgresQueries.impR, parameters);
             if (!result1.next()) throw new IllegalStateException("IMP result1 empty");
             final long firstRead = result1.getLong(1);
 
             sleep((Long) parameters.get("sleepTime"));
 
-            final ResultSet result2 = runQuery(conn, PostgresQueries.imp2, parameters);
+            final ResultSet result2 = runQuery(conn, PostgresQueries.impR, parameters);
             if (!result2.next()) throw new IllegalStateException("IMP result2 empty");
             final long secondRead = result2.getLong(1);
 
@@ -374,7 +374,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> pmpW(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            executeUpdates(conn, PostgresQueries.pmp1, parameters, true);
+            executeUpdates(conn, PostgresQueries.pmpW, parameters, true);
 
             return ImmutableMap.of();
         } catch (SQLException e) {
@@ -387,13 +387,13 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> pmpR(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            final ResultSet result1 = runQuery(conn, PostgresQueries.pmp2, parameters);
+            final ResultSet result1 = runQuery(conn, PostgresQueries.pmpR, parameters);
             if (!result1.next()) throw new IllegalStateException("PMP result1 empty");
             final long firstRead = result1.getLong(1);
 
             sleep((Long) parameters.get("sleepTime"));
 
-            final ResultSet result2 = runQuery(conn, PostgresQueries.pmp2, parameters);
+            final ResultSet result2 = runQuery(conn, PostgresQueries.pmpR, parameters);
             if (!result2.next()) throw new IllegalStateException("PMP result2 empty");
             final long secondRead = result2.getLong(1);
 
@@ -419,9 +419,9 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
             Random random = new Random();
             for (int i = 0; i < 100; i++) {
                 long personId  = random.nextInt((int) parameters.get("cycleSize")+1);
-                ResultSet rs = runQuery(conn, PostgresQueries.otv1query, ImmutableMap.of("personId", personId));
+                ResultSet rs = runQuery(conn, PostgresQueries.otvWquery, ImmutableMap.of("personId", personId));
                 while (rs.next()) {
-                    executeUpdates(PostgresQueries.otv1update, ImmutableMap.of("p1id", rs.getLong(1), "p2id", rs.getLong(2), "p3id", rs.getLong(3), "p4id", rs.getLong(4)), true);
+                    executeUpdates(PostgresQueries.otvWupdate, ImmutableMap.of("p1id", rs.getLong(1), "p2id", rs.getLong(2), "p3id", rs.getLong(3), "p4id", rs.getLong(4)), true);
                 }
                 commitTransaction(conn);
             }
@@ -436,7 +436,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> otvR(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            final ResultSet result1 = runQuery(conn, PostgresQueries.otv2, parameters);
+            final ResultSet result1 = runQuery(conn, PostgresQueries.otvR, parameters);
             if (!result1.next()) throw new IllegalStateException("OTV2 result1 empty");
             final List<Object> firstRead = new ArrayList();
             {
@@ -448,7 +448,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
 
             sleep((Long) parameters.get("sleepTime"));
 
-            final ResultSet result2 = runQuery(conn, PostgresQueries.otv2, parameters);
+            final ResultSet result2 = runQuery(conn, PostgresQueries.otvR, parameters);
             if (!result2.next()) throw new IllegalStateException("OTV2 result2 empty");
             final List<Object> secondRead = new ArrayList();
             {
@@ -475,7 +475,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> frW(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            executeUpdates(conn, PostgresQueries.fr1, parameters, true);
+            executeUpdates(conn, PostgresQueries.frW, parameters, true);
 
             return ImmutableMap.of();
         } catch (SQLException e) {
@@ -489,13 +489,13 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> frR(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            final ResultSet result1 = runQuery(conn, PostgresQueries.fr2, parameters);
+            final ResultSet result1 = runQuery(conn, PostgresQueries.frR, parameters);
             if (!result1.next()) throw new IllegalStateException("FR2 result1 empty");
             final List<Object> firstRead = toObjectList((Object[])result1.getArray(3).getArray());
 
             sleep((Long) parameters.get("sleepTime"));
 
-            final ResultSet result2 = runQuery(conn, PostgresQueries.fr2, parameters);
+            final ResultSet result2 = runQuery(conn, PostgresQueries.frR, parameters);
             if (!result1.next()) throw new IllegalStateException("FR2 result2 empty");
             final List<Object> secondRead = toObjectList((Object[])result2.getArray(3).getArray());
 
@@ -516,7 +516,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> luW(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            executeUpdates(conn, PostgresQueries.lu1, parameters, true);
+            executeUpdates(conn, PostgresQueries.luW, parameters, true);
 
             return ImmutableMap.of();
         } catch (SQLException e) {
@@ -530,7 +530,7 @@ public class PostgresDriver extends TestDriver<Connection, Map<String, Object>, 
     @Override
     public Map<String, Object> luR(Map<String, Object> parameters) {
         try (Connection conn = startTransaction()) {
-            final ResultSet result = runQuery(conn, PostgresQueries.lu2, parameters);
+            final ResultSet result = runQuery(conn, PostgresQueries.luR, parameters);
             if (!result.next()) throw new IllegalStateException("LU2 result empty");
             long numKnowsEdges = result.getLong(1);
             long numFriends = result.getLong(2);
