@@ -1,6 +1,6 @@
 # LDBC ACID tests
 
-[TPCTC 2020 paper (preprint PDF)](http://mit.bme.hu/~szarnyas/ldbc/ldbc-acid-tpctc2020-camera-ready.pdf)
+[TPCTC'20 paper](https://link.springer.com/chapter/10.1007/978-3-030-84924-5_1) ([preprint PDF](http://mit.bme.hu/~szarnyas/ldbc/ldbc-acid-tpctc2020-camera-ready.pdf))
 
 See the chapter on "ACID tests" in the [LDBC SNB specification](https://ldbc.github.io/ldbc_snb_docs/ldbc-snb-specification.pdf)
 
