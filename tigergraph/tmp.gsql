@@ -1,0 +1,29 @@
+
+USE GRAPH ldbc_acid
+CREATE OR REPLACE QUERY insertPerson(UINT id, STRING name, SET<STRING> emails) {
+  INSERT INTO Person (PRIMARY_ID, id, name, emails) VALUES (id, id, name, emails);
+}
+
+
+CREATE OR REPLACE QUERY atomicityC(UINT person1Id, UINT person2Id, STRING email, UINT since) {
+  SetAccum<STRING> @@emails;
+  P1 = SELECT p FROM Person:p WHERE p.id == person1Id ACCUM @@emails += p.emails;
+  @@emails += email;
+  UPDATE p FROM P1:p SET p.emails = @@emails;
+  INSERT INTO Person (PRIMARY_ID) VALUES (person2Id);
+  INSERT INTO KNOWS (FROM, TO, since) VALUES (person1Id, person2Id, since);
+}
+
+CREATE OR REPLACE QUERY atomicityRB(UINT person1Id, UINT person2Id, STRING email) {
+  P2 = SELECT p FROM Person:p WHERE p.id == person2Id;
+  IF P2.size()==0 THEN 
+    P1 = SELECT p FROM Person:p WHERE p.id == person1Id POST-ACCUM p.emails += email;
+    INSERT INTO Person (PRIMARY_ID) VALUES (person2Id);
+  END;
+}
+
+CREATE OR REPLACE QUERY atomicityCheck() {
+  SetAccum<UINT> @@nEmails;
+  P = SELECT p FROM Person:p ACCUM @@nEmails += p.emails.size();
+  PRINT P.size() as numPersons, P.size() as numNames, @@nEmails as numEmails;
+}
