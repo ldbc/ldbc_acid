@@ -23,7 +23,14 @@ CREATE OR REPLACE QUERY atomicityRB(UINT person1Id, UINT person2Id, STRING email
 }
 
 CREATE OR REPLACE QUERY atomicityCheck() {
-  SetAccum<UINT> @@nEmails;
+  SumAccum<UINT> @@nEmails;
   P = SELECT p FROM Person:p ACCUM @@nEmails += p.emails.size();
   PRINT P.size() as numPersons, P.size() as numNames, @@nEmails as numEmails;
 }
+
+CREATE OR REPLACE QUERY showPerson() {
+  P = SELECT p FROM Person:p;
+  PRINT P;
+}
+INSTALL QUERY *
+

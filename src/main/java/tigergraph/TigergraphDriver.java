@@ -15,6 +15,7 @@ import io.github.karol_brejna_i.tigergraph.restppclient.model.HelloResponse;
 import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.io.*;
 
 // No transaction in TigerGraph
 public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, Map<String, Object>>{
@@ -26,7 +27,7 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
     public TigergraphDriver(String endpoint, String graphName) {
         this.endpoint = endpoint;
         this.graphName = graphName;
-        this.debug = false;
+        this.debug = true;
         
         ApiClient defaultApiClient = Configuration.getDefaultApiClient();
         defaultApiClient.setBasePath(this.endpoint);
@@ -37,9 +38,11 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
     }
 
     private Map<String, String> toStringMap(Map<String, Object> input) {
-        Map<String,String> newMap = input.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, e -> (String)e.getValue()));
-        return newMap;
+        ImmutableMap.Builder<String, String> mymap = ImmutableMap.<String, String>builder();
+        for (Map.Entry<String, Object> entry : input.entrySet()) {
+            mymap.put(entry.getKey(), String.valueOf(entry.getValue()));
+        }
+        return mymap.build();
     }
     
     @Override
@@ -69,7 +72,15 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
         
         List<Object> results = queryResponse.getResults();
         LinkedTreeMap<String, Object> result = null;
-        if (results != null) {
+
+        if (this.debug) {
+            System.out.println(results.size());
+            for(int i=0; i<results.size(); i++){
+                System.out.println(results.get(i));
+            }
+        }
+
+        if (results != null && results.size() > 0) {
             result = (LinkedTreeMap<String, Object>) results.get(0);
         }
         return result;
@@ -94,9 +105,9 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
     @Override
     public void atomicityInit() {
         Map<String,String> param1, param2;
-        param1 = ImmutableMap.<String, String>of("id", "1", "name", "Alice", "emails", "(\"alice@aol.com\")");
+        param1 = ImmutableMap.<String, String>of("id", "1", "name", "Alice", "emails[0]", "alice@aol.com");
         runQuery("insertPerson", param1);
-        param2 = ImmutableMap.<String, String>of("id", "2", "name", "Bob", "emails", "(\"bob@hotmail.com\", \"bobby@yahoo.com\")");
+        param2 = ImmutableMap.<String, String>of("id", "2", "name", "Bob", "emails[0]", "bob@hotmail.com", "emails[1]", "bobby@yahoo.com");
         runQuery("insertPerson", param2);
     }
 
@@ -112,7 +123,11 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
 
     @Override
     public Map<String, Object> atomicityCheck() {
-        return runQuery("atomicityCheck", ImmutableMap.<String, String>of());
+        Map<String, Object> results = runQuery("atomicityCheck", ImmutableMap.<String, String>of());
+        results.put("numPersons", (long)(double)results.get("numPersons"));
+        results.put("numNames", (long)(double)results.get("numNames"));  
+        results.put("numEmails", (long)(double)results.get("numEmails"));
+        return results;
     }
 
     @Override

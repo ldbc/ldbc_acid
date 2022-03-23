@@ -56,6 +56,15 @@ dependencies {
     // PostgreSQL
     compile group: 'ru.yandex.qatools.embed', name: 'postgresql-embedded', version: '2.10'
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.14'
-
+    
+    // Tigergraph
+    compile "io.github.karol_brejna_i.tigergraph:restpp-client:1.0.0"
+    compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
+    compile 'com.squareup.okhttp:okhttp:2.7.5'
+    compile 'com.squareup.okhttp:logging-interceptor:2.7.5'
+    compile 'com.google.code.gson:gson:2.8.1'
+    compile 'io.gsonfire:gson-fire:1.8.3'
+    compile 'org.threeten:threetenbp:1.3.5'
+    
     testCompile 'junit:junit:4.12'
 }

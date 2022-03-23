@@ -11,7 +11,6 @@ CREATE OR REPLACE QUERY insertPerson(UINT id, STRING name, SET<STRING> emails) {
   INSERT INTO Person (PRIMARY_ID, id, name, emails) VALUES (id, id, name, emails);
 }
 
-
 CREATE OR REPLACE QUERY atomicityC(UINT person1Id, UINT person2Id, STRING email, UINT since) {
   SetAccum<STRING> @@emails;
   P1 = SELECT p FROM Person:p WHERE p.id == person1Id ACCUM @@emails += p.emails;
@@ -30,9 +29,11 @@ CREATE OR REPLACE QUERY atomicityRB(UINT person1Id, UINT person2Id, STRING email
 }
 
 CREATE OR REPLACE QUERY atomicityCheck() {
-  SetAccum<UINT> @@nEmails;
+  SumAccum<UINT> @@nEmails;
   P = SELECT p FROM Person:p ACCUM @@nEmails += p.emails.size();
   PRINT P.size() as numPersons, P.size() as numNames, @@nEmails as numEmails;
 }
 
 
+
+INSTALL QUERY *
