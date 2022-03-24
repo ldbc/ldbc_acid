@@ -11,14 +11,14 @@ CREATE OR REPLACE QUERY insertPerson(UINT id, STRING name, SET<STRING> emails) {
   INSERT INTO Person (PRIMARY_ID, id, name, emails) VALUES (id, id, name, emails);
 }
 
-CREATE OR REPLACE QUERY atomicityC(UINT person1Id, UINT person2Id, STRING email, UINT since) {
-  P1 = SELECT p FROM Person:p WHERE p.id == person1Id POST-ACCUM p.emails += email;
+CREATE OR REPLACE QUERY atomicityC(UINT person1Id, UINT person2Id, STRING newEmail, UINT since) {
+  P1 = SELECT p FROM Person:p WHERE p.id == person1Id POST-ACCUM p.emails += newEmail;
   INSERT INTO Person (PRIMARY_ID) VALUES (person2Id);
   INSERT INTO KNOWS (FROM, TO, since) VALUES (person1Id, person2Id, since);
 }
 
-CREATE OR REPLACE QUERY atomicityRB(UINT person1Id, UINT person2Id, STRING email) {
-  P1 = SELECT p FROM Person:p WHERE p.id == person1Id POST-ACCUM p.emails += email;
+CREATE OR REPLACE QUERY atomicityRB(UINT person1Id, UINT person2Id, STRING newEmail) {
+  P1 = SELECT p FROM Person:p WHERE p.id == person1Id POST-ACCUM p.emails += newEmail;
   P2 = SELECT p FROM Person:p WHERE p.id == person2Id;
   IF P2.size() > 0 THEN
     ABORT;
@@ -65,20 +65,24 @@ CREATE OR REPLACE QUERY g0check(UINT person1Id, UINT person2Id) {
 CREATE OR REPLACE QUERY g1Init(UINT id, UINT version) {
   INSERT INTO Person (PRIMARY_ID, version) VALUES (id, version);
 }
-
+/*
 CREATE OR REPLACE QUERY g1aW(VERTEX<Person> personId, UINT sleepTime) {
-  UINT a;
+  UINT a,b;
   DATETIME t0;
   P = {personId};
   // TigerGraph does not have sleep function
   t0 = now();
-  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  WHILE TRUE DO 
+    IF datetime_diff(now(),t0) >= sleepTime THEN BREAK; END; 
+  END;
   UPDATE p FROM P:p SET p.version = 2;
   t0 = now();
-  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  WHILE TRUE DO 
+    IF datetime_diff(now(),t0) >= sleepTime THEN BREAK; END; 
+  END;
   ABORT;
 }
-
+*/
 CREATE OR REPLACE QUERY g1bW(VERTEX<Person> personId, UINT sleepTime, UINT even, UINT odd) {
   UINT a;
   DATETIME t0;
@@ -95,6 +99,14 @@ CREATE OR REPLACE QUERY g1R(VERTEX<Person> personId) {
   P = {personId};
   tmp = SELECT p FROM P:p ACCUM pVersion = p.version;
   PRINT pVersion;
+}
+
+CREATE OR REPLACE QUERY g1c(VERTEX<Person> person1Id, VERTEX<Person> person2Id, UINT transactionId) {
+  UINT person2Version;
+  P1 = {person1Id}; P2 = {person2Id};
+  UPDATE p FROM P1:p SET p.version = transactionId;
+  tmp = SELECT p FROM P2:p ACCUM person2Version = p.version;
+  PRINT person2Version;
 }
 
 INSTALL QUERY *

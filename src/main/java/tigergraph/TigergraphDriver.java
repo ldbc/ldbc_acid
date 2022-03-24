@@ -58,9 +58,22 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
         return runQuery(0, querySpecification, queryParameters);
     };
 
+    private String mapToString(Map<String, String> map) {
+        if (map == null || map.size()==0) return "";
+        StringBuilder mapAsString = new StringBuilder("{");
+        for (String key : map.keySet()) {
+            mapAsString.append(key + ":" + map.get(key) + ", ");
+        }
+        mapAsString.delete(mapAsString.length()-2, mapAsString.length()).append("}");
+        return mapAsString.toString();
+    }
+
     @Override
     public Map<String, Object> runQuery(Integer x, String querySpecification, Map<String, String> queryParameters) {
         QueryResponse queryResponse = new QueryResponse();
+        if (this.debug) {
+            System.out.println(querySpecification + ":" + mapToString(queryParameters));
+        }
         try {
             queryResponse = apiInstance.runInstalledQueryGet(this.graphName, querySpecification, 
             null, null, null, null, null, null,
@@ -74,9 +87,10 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
         LinkedTreeMap<String, Object> result = null;
 
         if (this.debug) {
-            System.out.println(results.size());
+            System.out.println("Num of results" + results.size() + ":");
             for(int i=0; i<results.size(); i++){
-                System.out.println(results.get(i));
+                String trail = i == results.size() - 1 ? "\n" : ",";
+                System.out.print(results.get(i) + trail);
             }
         }
 
@@ -137,13 +151,13 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
 
     @Override
     public Map<String, Object> g0(Map<String, Object> parameters) {
-        runQuery("g0", parameters);
+        runQuery("g0", toStringMap(parameters));
         return ImmutableMap.<String, Object>of();
     }
 
     @Override
     public Map<String, Object> g0check(Map<String, Object> parameters) {
-        return runQuery("g0check", parameters);
+        return runQuery("g0check", toStringMap(parameters));
     }
 
     // G1a Intermediate Reads
@@ -155,13 +169,13 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
 
     @Override
     public Map<String, Object> g1aW(Map<String, Object> parameters) {
-        runQuery("g1aW", parameters);
+        runQuery("g1aW", toStringMap(parameters));
         return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> g1aR(Map<String, Object> parameters) {
-        runQuery("g1R", parameters);
+        runQuery("g1R", toStringMap(parameters));
         return ImmutableMap.of();
     }
 
@@ -174,13 +188,13 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
 
     @Override
     public Map<String, Object> g1bW(Map<String, Object> parameters) {
-        runQuery("g1bW", parameters);
+        runQuery("g1bW", toStringMap(parameters));
         return ImmutableMap.<String, Object>of();
     }
 
     @Override
     public Map<String, Object> g1bR(Map<String, Object> parameters) {
-        runQuery("g1R", parameters);
+        runQuery("g1R", toStringMap(parameters));
         return ImmutableMap.of();
     }
 
@@ -194,7 +208,9 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
 
     @Override
     public Map<String, Object> g1c(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        Map<String, Object> results = runQuery("g1c", toStringMap(parameters));
+        results.put("person2Version", (long)(double)results.get("person2Version"));
+        return results;
     }
 
     // IMP
