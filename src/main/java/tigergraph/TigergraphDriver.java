@@ -125,60 +125,72 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
     public Map<String, Object> atomicityCheck() {
         Map<String, Object> results = runQuery("atomicityCheck", ImmutableMap.<String, String>of());
         results.put("numPersons", (long)(double)results.get("numPersons"));
-        results.put("numNames", (long)(double)results.get("numNames"));  
+        results.put("numNames", (long)(double)results.get("numNames"));
         results.put("numEmails", (long)(double)results.get("numEmails"));
         return results;
     }
 
     @Override
-    public void g0Init() {}
+    public void g0Init() {
+        runQuery("initKnow", ImmutableMap.<String, String>of());
+    }
 
     @Override
     public Map<String, Object> g0(Map<String, Object> parameters) {
+        runQuery("g0", parameters);
         return ImmutableMap.<String, Object>of();
     }
 
     @Override
     public Map<String, Object> g0check(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        return runQuery("g0check", parameters);
     }
 
     // G1a Intermediate Reads
 
     @Override
-    public void g1aInit() {}
+    public void g1aInit() {
+        runQuery("g1Init", ImmutableMap.<String, String>of("id","1","version","1"));
+    }
 
     @Override
     public Map<String, Object> g1aW(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        runQuery("g1aW", parameters);
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> g1aR(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        runQuery("g1R", parameters);
+        return ImmutableMap.of();
     }
 
     // G1b Intermediate Reads
 
     @Override
     public void g1bInit() {
-
+        runQuery("g1Init", ImmutableMap.<String, String>of("id","1","version","99"));
     }
 
     @Override
     public Map<String, Object> g1bW(Map<String, Object> parameters) {
+        runQuery("g1bW", parameters);
         return ImmutableMap.<String, Object>of();
     }
 
     @Override
     public Map<String, Object> g1bR(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        runQuery("g1R", parameters);
+        return ImmutableMap.of();
     }
 
     // G1c Circular Information Flow
 
     @Override
-    public void g1cInit() {}
+    public void g1cInit() {
+        runQuery("g1Init", ImmutableMap.<String, String>of("id","1","version","0"));
+        runQuery("g1Init", ImmutableMap.<String, String>of("id","2","version","0"));
+    }
 
     @Override
     public Map<String, Object> g1c(Map<String, Object> parameters) {
