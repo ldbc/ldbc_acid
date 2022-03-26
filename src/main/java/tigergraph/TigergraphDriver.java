@@ -14,8 +14,9 @@ import io.github.karol_brejna_i.tigergraph.restppclient.model.HelloResponse;
 
 import java.util.Map;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
 import java.io.*;
+import java.util.Random;
 
 // No transaction in TigerGraph
 public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, Map<String, Object>>{
@@ -24,13 +25,14 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
     private final QueryApi apiInstance;
     private final DefaultApi defaultApi;
     private final boolean debug;
+
     public TigergraphDriver(String endpoint, String graphName) {
         this.endpoint = endpoint;
         this.graphName = graphName;
         this.debug = true;
         
         ApiClient defaultApiClient = Configuration.getDefaultApiClient();
-        defaultApiClient.setBasePath(this.endpoint);
+        defaultApiClient.setBasePath(this.endpoint).setConnectTimeout(600000).setReadTimeout(600000).setWriteTimeout(600000);
         Configuration.setDefaultApiClient(defaultApiClient);
         
         this.apiInstance = new QueryApi();
@@ -76,7 +78,7 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
         }
         try {
             queryResponse = apiInstance.runInstalledQueryGet(this.graphName, querySpecification, 
-            null, null, null, null, null, null,
+            null, null, 600000, null, null, null,
             queryParameters);
         } catch (ApiException e) {
             System.err.println("Exception when calling " + querySpecification);
@@ -87,7 +89,7 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
         LinkedTreeMap<String, Object> result = null;
 
         if (this.debug) {
-            System.out.println("Num of results" + results.size() + ":");
+            System.out.println("Num of results: " + results.size() );
             for(int i=0; i<results.size(); i++){
                 String trail = i == results.size() - 1 ? "\n" : ",";
                 System.out.print(results.get(i) + trail);
@@ -216,90 +218,133 @@ public class TigergraphDriver extends TestDriver<Integer, Map<String, String>, M
     // IMP
 
     @Override
-    public void impInit() {}
+    public void impInit() {
+        runQuery("g1Init", ImmutableMap.<String, String>of("id","1","version","1"));
+    }
 
     @Override
     public Map<String, Object> impW(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        runQuery("impW", toStringMap(parameters));
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> impR(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        Map<String, Object> results = runQuery("impR", toStringMap(parameters));
+        results.put("firstRead", (long)(double)results.get("firstRead"));
+        results.put("secondRead", (long)(double)results.get("secondRead"));
+        return results;
     }
 
     // PMP
 
     @Override
-    public void pmpInit() {}
+    public void pmpInit() {
+        runQuery("g1Init", ImmutableMap.<String, String>of("id","1","version","1"));
+    }
 
     @Override
     public Map<String, Object> pmpW(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        runQuery("pmpW", toStringMap(parameters));
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> pmpR(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        Map<String, Object> results = runQuery("pmpR", toStringMap(parameters));
+        results.put("firstRead", (long)(double)results.get("firstRead"));
+        results.put("secondRead", (long)(double)results.get("secondRead"));
+        return results;
     }
 
     // OTV
 
     @Override
-    public void otvInit() {}
+    public void otvInit() {
+        runQuery("initCycle", ImmutableMap.<String, String>of());
+    }
 
     @Override
     public Map<String, Object> otvW(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        runQuery("otvW", toStringMap(parameters));
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> otvR(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        Map<String, Object> results = runQuery("otvR", toStringMap(parameters));
+        return results;
     }
 
     // FR
 
     @Override
-    public void frInit() {}
+    public void frInit() {
+        runQuery("initCycle", ImmutableMap.<String, String>of());
+    }
 
     @Override
     public Map<String, Object> frW(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        runQuery("otvW", toStringMap(parameters));
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> frR(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        Map<String, Object> results = runQuery("otvR", toStringMap(parameters));
+        return results;
     }
 
     // LU
 
     @Override
-    public void luInit() {}
+    public void luInit() {
+        Map<String,String> param = ImmutableMap.<String, String>of("id", "1", "name", "");
+        runQuery("insertPerson", param);
+    }
 
     @Override
     public Map<String, Object> luW(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        runQuery("luW", toStringMap(parameters));
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> luR(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        Map<String, Object> results = runQuery("luR", toStringMap(parameters));
+        results.put("numKnowsEdges", (long)(double)results.get("numKnowsEdges"));
+        results.put("numFriendsProp", (long)(double)results.get("numFriendsProp"));
+        return results;
     }
 
     // WS
 
     @Override
-    public void wsInit() {}
+    public void wsInit() {
+        for (int i = 1; i <= 10; i++) {
+            runQuery("wsInit", ImmutableMap.of("person1Id", Integer.toString(2*i-1), "person2Id", Integer.toString(2*i)));
+        }
+    }
 
     @Override
     public Map<String, Object> wsW(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        long personId = new Random().nextBoolean() ?
+                    (long) parameters.get("person1Id") :
+                    (long) parameters.get("person2Id");
+        ImmutableMap<String, String> param =
+            new ImmutableMap.Builder()
+            .putAll(toStringMap(parameters))
+            .put("personId", String.valueOf(personId))
+            .build();
+        runQuery("wsW", param);
+        return ImmutableMap.of();
     }
 
     @Override
     public Map<String, Object> wsR(Map<String, Object> parameters) {
-        return ImmutableMap.<String, Object>of();
+        Map<String, Object> results = runQuery("wsR", toStringMap(parameters));
+        if (results.get("result") instanceof ArrayList) return ImmutableMap.of();
+        LinkedTreeMap<String, Object> record = (LinkedTreeMap<String, Object>) results.get("result");
+        return record;
     }
 }
