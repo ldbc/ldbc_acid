@@ -194,9 +194,9 @@ CREATE OR REPLACE  QUERY luW(UINT person1Id, UINT person2Id) {
   UPDATE p FROM P:p SET p.numFriends += 1;
 }
 
-CREATE OR REPLACE  QUERY luR(UINT person1Id) {
+CREATE OR REPLACE  QUERY luR(UINT personId) {
   UINT numFriendsProp;
-  S = SELECT s FROM Person:s WHERE s.id == person1Id ACCUM numFriendsProp = s.numFriends;
+  S = SELECT s FROM Person:s WHERE s.id == personId ACCUM numFriendsProp = s.numFriends;
   P = SELECT p FROM S-(KNOWS)-Person:p;
   PRINT  P.size() AS numKnowsEdges, numFriendsProp;
 }

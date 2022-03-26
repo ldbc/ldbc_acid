@@ -67,10 +67,8 @@ We're currently using an embedded version.
 ### TigerGraph
 
 ```bash
-#
 docker run --rm -idt --name acid-tg -p 9000:9000 -p 14022:22 -p 14240:14240 -v `pwd`/tigergraph:/tigergraph:z docker.tigergraph.com/tigergraph:latest
-docker exec --user tigergraph -it acid-tg /home/tigergraph/tigergraph/app/cmd/gadmin start all
-docker exec --user tigergraph -it acid-tg bash -c "export PATH=/home/tigergraph/tigergraph/app/cmd:\$PATH; gadmin start all; gsql /tigergraph/schema.gsql"
+docker exec --user tigergraph -it acid-tg bash -c "export PATH=/home/tigergraph/tigergraph/app/cmd:\$PATH; gadmin start all; gsql /tigergraph/setup.gsql"
 # to log into the container
 # docker exec --user tigergraph -it acid-tg bash
 # Stop the docker after the test
