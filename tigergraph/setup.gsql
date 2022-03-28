@@ -188,20 +188,20 @@ CREATE OR REPLACE QUERY otvR(Vertex<Person> personId, UINT sleepTime) syntax v2 
   PRINT @@firstRead AS firstRead, @@secondRead AS secondRead;
 }
 
-CREATE OR REPLACE  QUERY luW(UINT person1Id, UINT person2Id) {
+CREATE OR REPLACE QUERY luW(UINT person1Id, UINT person2Id) {
   P = SELECT s FROM Person:s WHERE s.id == person1Id;
   INSERT INTO KNOWS (FROM, TO) VALUES (person1Id, person2Id);
   UPDATE p FROM P:p SET p.numFriends += 1;
 }
 
-CREATE OR REPLACE  QUERY luR(UINT personId) {
+CREATE OR REPLACE QUERY luR(UINT personId) {
   UINT numFriendsProp;
   S = SELECT s FROM Person:s WHERE s.id == personId ACCUM numFriendsProp = s.numFriends;
   P = SELECT p FROM S-(KNOWS)-Person:p;
   PRINT  P.size() AS numKnowsEdges, numFriendsProp;
 }
 
-CREATE OR REPLACE  QUERY wsInit(UINT person1Id, UINT person2Id) {
+CREATE OR REPLACE QUERY wsInit(UINT person1Id, UINT person2Id) {
   INSERT INTO Person (PRIMARY_ID, version) VALUES (person1Id, 70);
   INSERT INTO Person (PRIMARY_ID, version) VALUES (person2Id, 80);
 }
@@ -233,7 +233,7 @@ CREATE OR REPLACE QUERY wsW(VERTEX<Person> person1Id, VERTEX<Person> person2Id, 
   END;
 }
 
-CREATE OR REPLACE  QUERY wsR() {
+CREATE OR REPLACE QUERY wsR() {
   MapAccum<INT, INT> @@pValues;
   MaxAccum<INT> @nextId, @nextValue;
   P = SELECT p FROM Person:p ACCUM @@pValues += (p.id -> p.version);
