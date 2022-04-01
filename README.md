@@ -73,5 +73,6 @@ docker exec --user tigergraph -it acid-tg bash -c "export PATH=/home/tigergraph/
 # Stop the docker after the test
 docker stop acid-tg 
 ```
+Note the license in the container is a trial license supporting at most 100GB data. This license sufficient for ACID tests.
 
 TigerGraph has two modes of running query: non-distributed and distributed. The ABORT function currently does not work in the non-distributed mode but work for distributed. Atomicity and G1aW are implemented in the distributed query and all other queries are implemented using non-distributed query. All the tests can pass. 
