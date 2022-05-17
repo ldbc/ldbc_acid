@@ -13,6 +13,7 @@ java {
 
 repositories {
     mavenCentral { metadataSources { mavenPom(); artifact() } }
+    mavenLocal()
     jcenter() // for TigerGraph
     flatDir { dirs 'lib' }
 }
