@@ -9,6 +9,7 @@ See the chapter on "ACID tests" in the [LDBC SNB specification](https://ldbc.git
 * Neo4j
 * Memgraph
 * Dgraph
+* TigerGraph
 * JanusGraph (various backends)
 * PostgreSQL (various isolation levels)
 
@@ -64,7 +65,8 @@ docker run --rm -it -p 8080:8080 -p 9080:9080 -p 8000:8000 -v ~/dgraph:/dgraph d
 
 We're currently using an embedded version.
 
-### TigerGraph 
+### TigerGraph
+
 ```bash
 docker run --rm -idt --name acid-tg -p 9000:9000 -p 14022:22 -p 14240:14240 -v `pwd`/tigergraph:/tigergraph:z docker.tigergraph.com/tigergraph:latest
 docker exec --user tigergraph -it acid-tg bash -c "export PATH=/home/tigergraph/tigergraph/app/cmd:\$PATH; gadmin start all; gsql /tigergraph/setup.gsql"
@@ -73,6 +75,7 @@ docker exec --user tigergraph -it acid-tg bash -c "export PATH=/home/tigergraph/
 # Stop the docker after the test
 docker stop acid-tg 
 ```
-Note the license in the container is a trial license supporting at most 100GB data. This license sufficient for ACID tests.
 
-TigerGraph has two modes of running query: non-distributed and distributed. The ABORT function currently does not work in the non-distributed mode but work for distributed. Atomicity and G1aW are implemented in the distributed query and all other queries are implemented using non-distributed query. All the tests can pass. 
+Note that the license in the container is a trial license supporting at most 100GB data. This license is sufficient for ACID tests.
+
+TigerGraph has two modes of running query: non-distributed and distributed. The ABORT function currently does not work in the non-distributed mode but works for distributed. Atomicity and G1aW are implemented in the distributed query and all other queries are implemented using non-distributed query. All the tests pass.
