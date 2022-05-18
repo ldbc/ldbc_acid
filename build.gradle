@@ -13,8 +13,8 @@ java {
 
 repositories {
     mavenCentral { metadataSources { mavenPom(); artifact() } }
-    mavenLocal()
     jcenter() // for TigerGraph
+    maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
     flatDir { dirs 'lib' }
 }
 
