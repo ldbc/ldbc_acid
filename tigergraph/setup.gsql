@@ -1,0 +1,245 @@
+CREATE VERTEX Person (PRIMARY_ID id UINT, numFriends UINT, version INT, versionHistory LIST<INT>, name STRING, emails SET<STRING>) WITH primary_id_as_attribute="TRUE"
+CREATE VERTEX Post (PRIMARY_ID id UINT) WITH primary_id_as_attribute="TRUE"
+
+CREATE UNDIRECTED EDGE KNOWS (FROM Person, TO Person, since UINT, versionHistory LIST<INT>)
+CREATE DIRECTED EDGE LIKES (FROM Person, TO Post) WITH REVERSE_EDGE="LIKES_REVERSE"
+
+CREATE GRAPH ldbc_acid(*)
+
+USE GRAPH ldbc_acid
+CREATE OR REPLACE QUERY insertPerson(UINT id, STRING name, SET<STRING> emails) {
+  INSERT INTO Person (PRIMARY_ID, id, name, emails) VALUES (id, id, name, emails);
+}
+
+CREATE OR REPLACE QUERY atomicityC(UINT person1Id, UINT person2Id, STRING newEmail, UINT since) {
+  P1 = SELECT p FROM Person:p WHERE p.id == person1Id POST-ACCUM p.emails += newEmail;
+  INSERT INTO Person (PRIMARY_ID) VALUES (person2Id);
+  INSERT INTO KNOWS (FROM, TO, since) VALUES (person1Id, person2Id, since);
+}
+
+CREATE OR REPLACE DISTRIBUTED QUERY atomicityRB(UINT person1Id, UINT person2Id, STRING newEmail) {
+  P1 = SELECT p FROM Person:p WHERE p.id == person1Id POST-ACCUM p.emails += newEmail;
+  P2 = SELECT p FROM Person:p WHERE p.id == person2Id;
+  IF P2.size() > 0 THEN
+    ABORT;
+  ELSE
+    INSERT INTO Person (PRIMARY_ID) VALUES (person2Id);
+  END;
+}
+
+CREATE OR REPLACE QUERY atomicityCheck() {
+  SumAccum<UINT> @@nEmails;
+  P = SELECT p FROM Person:p ACCUM @@nEmails += p.emails.size();
+  P2 = SELECT p FROM Person:p WHERE p.name != "";
+  PRINT P.size() as numPersons, P2.size() as numNames, @@nEmails as numEmails;
+}
+
+CREATE OR REPLACE QUERY initKnow() {
+  INSERT INTO Person (PRIMARY_ID, versionHistory) VALUES (1, [0]);
+  INSERT INTO Person (PRIMARY_ID, versionHistory) VALUES (2, [0]);
+  INSERT INTO KNOWS (FROM, TO, versionHistory) VALUES (1, 2, [0]);
+}
+
+CREATE OR REPLACE QUERY g0(UINT person1Id, UINT person2Id, UINT transactionId) {
+  tmp = SELECT t FROM Person:s -(KNOWS:e)- Person:t 
+    WHERE s.id==person1Id AND t.id==person2Id
+    ACCUM e.versionHistory += transactionId
+    POST-ACCUM s.versionHistory += transactionId;
+  P1 = SELECT t FROM Person:t 
+    WHERE t.id==person2Id
+    POST-ACCUM t.versionHistory += transactionId;
+}
+
+CREATE OR REPLACE QUERY g0check(UINT person1Id, UINT person2Id) {
+  ListAccum<UINT> @@p1VersionHistory, @@kVersionHistory, @@p2VersionHistory;
+  tmp = SELECT t FROM Person:s -(KNOWS:e)- Person:t 
+    WHERE s.id==person1Id AND t.id==person2Id
+    ACCUM @@p1VersionHistory += s.versionHistory,
+    @@kVersionHistory += e.versionHistory,
+    @@p2VersionHistory += t.versionHistory;
+    PRINT @@p1VersionHistory AS p1VersionHistory,
+      @@kVersionHistory AS kVersionHistory,
+      @@p2VersionHistory AS p2VersionHistory;
+}
+
+CREATE OR REPLACE QUERY g1Init(UINT id, UINT version) {
+  INSERT INTO Person (PRIMARY_ID, version) VALUES (id, version);
+}
+// ABOR function is abnormal in non-distributed
+CREATE OR REPLACE DISTRIBUTED QUERY g1aW(VERTEX<Person> personId, UINT sleepTime) {
+  UINT a,b;
+  DATETIME t0;
+  P = {personId};
+  // TigerGraph does not have sleep function
+  t0 = now();
+  WHILE TRUE DO 
+    IF datetime_diff(now(),t0) >= sleepTime THEN BREAK; END; 
+  END;
+  UPDATE p FROM P:p SET p.version = 2;
+  t0 = now();
+  WHILE TRUE DO 
+    IF datetime_diff(now(),t0) >= sleepTime THEN BREAK; END; 
+  END;
+  ABORT;
+}
+
+CREATE OR REPLACE QUERY g1bW(VERTEX<Person> personId, UINT sleepTime, UINT even, UINT odd) {
+  UINT a;
+  DATETIME t0;
+  P = {personId};
+  // TigerGraph does not have sleep function
+  UPDATE p FROM P:p SET p.version = even;
+  t0 = now();
+  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  UPDATE p FROM P:p SET p.version = odd;
+}
+
+CREATE OR REPLACE QUERY g1R(VERTEX<Person> personId) {
+  UINT pVersion;
+  P = {personId};
+  tmp = SELECT p FROM P:p ACCUM pVersion = p.version;
+  PRINT pVersion;
+}
+
+CREATE OR REPLACE QUERY g1c(VERTEX<Person> person1Id, VERTEX<Person> person2Id, UINT transactionId) {
+  UINT person2Version;
+  P1 = {person1Id}; P2 = {person2Id};
+  UPDATE p FROM P1:p SET p.version = transactionId;
+  tmp = SELECT p FROM P2:p ACCUM person2Version = p.version;
+  PRINT person2Version;
+}
+
+CREATE OR REPLACE QUERY impW(VERTEX<Person> personId) {
+  P = {personId};
+  UPDATE p FROM P:p SET p.version += 1;
+}
+
+CREATE OR REPLACE QUERY impR(VERTEX<Person> personId, UINT sleepTime) {
+  UINT firstRead, secondRead, a;
+  DATETIME t0;
+  P = {personId};
+  tmp = SELECT p FROM P:p ACCUM firstRead = p.version;
+  t0 = now();
+  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  tmp = SELECT p FROM P:p ACCUM secondRead = p.version;
+  PRINT firstRead, secondRead; 
+}
+
+CREATE OR REPLACE QUERY pmpInit(UINT personId, UINT postId) {
+  INSERT INTO Person (PRIMARY_ID) VALUES (personId);
+  INSERT INTO Post (PRIMARY_ID) VALUES (postId);
+}
+
+CREATE OR REPLACE QUERY pmpW(UINT personId, UINT postId) {
+  INSERT INTO LIKES (FROM, TO) VALUES (personId, postId);
+}
+
+CREATE OR REPLACE QUERY pmpR(VERTEX<Post> postId, UINT sleepTime) SYNTAX v2{
+  DATETIME t0; UINT a;
+  Po = {postId};
+  P1 = SELECT p FROM Po-(<LIKES)- Person:p;
+  t0 = now();
+  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  P2 = SELECT p FROM Po-(<LIKES)- Person:p;
+  PRINT P1.size() AS firstRead, P2.size() AS secondRead;
+}
+
+CREATE OR REPLACE QUERY initCycle() {
+  INSERT INTO Person (PRIMARY_ID, version) VALUES (1, 0);
+  INSERT INTO Person (PRIMARY_ID, version) VALUES (2, 0);
+  INSERT INTO Person (PRIMARY_ID, version) VALUES (3, 0);
+  INSERT INTO Person (PRIMARY_ID, version) VALUES (4, 0);
+  INSERT INTO KNOWS (FROM, TO) VALUES (1, 2);
+  INSERT INTO KNOWS (FROM, TO) VALUES (2, 3);
+  INSERT INTO KNOWS (FROM, TO) VALUES (3, 4);
+  INSERT INTO KNOWS (FROM, TO) VALUES (4, 1);
+}
+
+CREATE OR REPLACE QUERY otvW() syntax v2 {
+  // Match a circle
+  OrAccum @visited; 
+  S = SELECT s FROM Person:s LIMIT 1;
+  P1 = SELECT p FROM S:s -(KNOWS)- Person:p ACCUM s.@visited += True LIMIT 1;
+  P2 = SELECT p FROM P1:s -(KNOWS)- Person:p WHERE NOT p.@visited ACCUM s.@visited += True LIMIT 1;
+  P3 = SELECT p FROM P2:s -(KNOWS)- Person:p WHERE NOT p.@visited ACCUM s.@visited += True LIMIT 1;
+  S = SELECT s FROM P3:p -(KNOWS)- S:s POST-ACCUM s.version += 1;
+  UPDATE p FROM P1:p SET p.version += 1;
+  UPDATE p FROM P2:p SET p.version += 1;
+  UPDATE p FROM P3:p SET p.version += 1;
+}
+
+CREATE OR REPLACE QUERY otvR(Vertex<Person> personId, UINT sleepTime) syntax v2 {
+  // Match a circle
+  OrAccum @visited;
+  ListAccum<UINT> @@firstRead, @@secondRead;
+  DATETIME t0; UINT a;
+  S = {personId};
+  P1 = SELECT p FROM S:s -(KNOWS)- Person:p ACCUM s.@visited += True LIMIT 1;
+  P2 = SELECT p FROM P1:s -(KNOWS)- Person:p WHERE NOT p.@visited ACCUM s.@visited += True LIMIT 1;
+  P3 = SELECT p FROM P2:s -(KNOWS)- Person:p WHERE NOT p.@visited ACCUM s.@visited += True LIMIT 1;
+  P3 = SELECT p FROM S:s -(KNOWS)- P3:p ACCUM @@firstRead += s.version, @@firstRead += p.version;
+  P2 = SELECT p FROM P3 -(KNOWS)- P2:p POST-ACCUM @@firstRead += p.version;
+  P1 = SELECT p FROM P2 -(KNOWS)- P1:p POST-ACCUM @@firstRead += p.version;
+  t0 = now();
+  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  P3 = SELECT p FROM S:s -(KNOWS)- P3:p ACCUM @@secondRead += s.version, @@secondRead += p.version;
+  P2 = SELECT p FROM P3 -(KNOWS)- P2:p POST-ACCUM @@secondRead += p.version;
+  P1 = SELECT p FROM P2 -(KNOWS)- P1:p POST-ACCUM @@secondRead += p.version;
+  PRINT @@firstRead AS firstRead, @@secondRead AS secondRead;
+}
+
+CREATE OR REPLACE QUERY luW(UINT person1Id, UINT person2Id) {
+  P = SELECT s FROM Person:s WHERE s.id == person1Id;
+  INSERT INTO KNOWS (FROM, TO) VALUES (person1Id, person2Id);
+  UPDATE p FROM P:p SET p.numFriends += 1;
+}
+
+CREATE OR REPLACE QUERY luR(UINT personId) {
+  UINT numFriendsProp;
+  S = SELECT s FROM Person:s WHERE s.id == personId ACCUM numFriendsProp = s.numFriends;
+  P = SELECT p FROM S-(KNOWS)-Person:p;
+  PRINT  P.size() AS numKnowsEdges, numFriendsProp;
+}
+
+CREATE OR REPLACE QUERY wsInit(UINT person1Id, UINT person2Id) {
+  INSERT INTO Person (PRIMARY_ID, version) VALUES (person1Id, 70);
+  INSERT INTO Person (PRIMARY_ID, version) VALUES (person2Id, 80);
+}
+/* fail
+CREATE OR REPLACE DISTRIBUTED QUERY wsW(VERTEX<Person> person1Id, VERTEX<Person> person2Id, UINT sleepTime, VERTEX<Person> personId) {
+  SumAccum<UINT> @@sum;
+  DATETIME t0; UINT a;
+  P1 = {person1Id}; P2 = {person2Id};
+  PP = P1 UNION P2;
+  tmp = SELECT s FROM PP:s ACCUM @@sum+=s.version;
+  IF @@sum < 100 THEN ABORT; END;
+  t0 = now();
+  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  P3 = {personId};
+  UPDATE p FROM P3:p SET p.version = @@sum - 100;
+}
+*/
+CREATE OR REPLACE QUERY wsW(VERTEX<Person> person1Id, VERTEX<Person> person2Id, UINT sleepTime, VERTEX<Person> personId) {
+  SumAccum<UINT> @@sum;
+  DATETIME t0; UINT a;
+  P1 = {person1Id}; P2 = {person2Id};
+  PP = P1 UNION P2;
+  tmp = SELECT s FROM PP:s ACCUM @@sum+=s.version;
+  IF @@sum >= 100 THEN 
+    t0 = now();
+    WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+    P3 = {personId};
+    UPDATE p FROM P3:p SET p.version = @@sum - 100;
+  END;
+}
+
+CREATE OR REPLACE QUERY wsR() {
+  MapAccum<INT, INT> @@pValues;
+  MaxAccum<INT> @nextId, @nextValue;
+  P = SELECT p FROM Person:p ACCUM @@pValues += (p.id -> p.version);
+  P = SELECT p FROM Person:p 
+    ACCUM p.@nextId += p.id+1, p.@nextValue += @@pValues.get(p.id+1) 
+    HAVING p.version + p.@nextValue <= 0;
+  PRINT P[P.id AS p1id, P.version AS p1value, P.@nextId AS p2id, P.@nextValue AS p2value] AS result;
+}
+INSTALL QUERY *

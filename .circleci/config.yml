@@ -51,6 +51,7 @@ jobs:
           name: Save test results
           command: |
             mkdir -p ~/test-results/junit/
+            find . -type d
             cp -r build/reports/tests/test/* ~/test-results/junit/
           when: always
       - store_test_results:
