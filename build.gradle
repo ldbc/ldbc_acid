@@ -58,8 +58,8 @@ dependencies {
     compile group: 'ru.yandex.qatools.embed', name: 'postgresql-embedded', version: '2.10'
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.14'
     
-    // Tigergraph
-    compile "io.github.karol_brejna_i.tigergraph:restpp-client:1.0.0"
+    // TigerGraph
+    compile "io.github.karol-brejna-i.tigergraph:restpp-client:0.0.2-SNAPSHOT"
     compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
     compile 'com.squareup.okhttp:okhttp:2.7.5'
     compile 'com.squareup.okhttp:logging-interceptor:2.7.5'
