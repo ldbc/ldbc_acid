@@ -17,10 +17,10 @@ import java.util.Map;
 
 public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, Object>, BindingSet> {
 
-	protected final HTTPRepository graphDBHTTPRepository;
+	protected HTTPRepository graphDBHTTPRepository;
 
 	public GraphDBDriver(String endpoint) {
-		graphDBHTTPRepository = new HTTPRepository(endpoint);
+		//graphDBHTTPRepository = new HTTPRepository(endpoint);
 	}
 
 	@Override
@@ -32,8 +32,8 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 
 	@Override
 	public RepositoryConnection startTransaction() {
-		//HTTPRepository http = new HTTPRepository("http://localhost:7201/repositories/ldbc-snb-acid-test");
-		final RepositoryConnection connection = graphDBHTTPRepository.getConnection();
+		HTTPRepository http = new HTTPRepository("http://localhost:7201/repositories/ldbc-snb-acid-test");
+		final RepositoryConnection connection = http.getConnection();
 		connection.begin();
 		return connection;
 	}
