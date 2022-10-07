@@ -2,12 +2,25 @@ package graphdb;
 
 import com.google.common.collect.ImmutableMap;
 import driver.TestDriver;
+import org.eclipse.rdf4j.http.protocol.Protocol;
+import org.eclipse.rdf4j.model.*;
+import org.eclipse.rdf4j.model.impl.LinkedHashModel;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.QueryLanguage;
 import org.eclipse.rdf4j.query.TupleQueryResult;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.config.RepositoryConfig;
+import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
+import org.eclipse.rdf4j.repository.config.RepositoryConfigSchema;
 import org.eclipse.rdf4j.repository.http.HTTPRepository;
+import org.eclipse.rdf4j.repository.manager.RemoteRepositoryManager;
+import org.eclipse.rdf4j.repository.manager.RepositoryManager;
+import org.eclipse.rdf4j.repository.sail.config.SailRepositorySchema;
+import org.eclipse.rdf4j.sail.config.SailConfigSchema;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +28,21 @@ import java.util.Random;
 
 public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, Object>, BindingSet> {
 
+	private final RepositoryManager repositoryManager;
+
 	protected HTTPRepository graphDBHTTPRepository;
 
+	private static final String REPOSITORY_ID = "ldbc-snb-acid-test";
+
 	public GraphDBDriver(String endpoint) {
-		//graphDBHTTPRepository = new HTTPRepository(endpoint);
+		repositoryManager = new RemoteRepositoryManager(endpoint);
+		repositoryManager.init();
+		RepositoryConfig config = createRepositoryConfig();
+		repositoryManager.addRepositoryConfig(config);
+		System.setProperty("http.maxConnections", "200");
+		graphDBHTTPRepository = new HTTPRepository(endpoint + File.separatorChar + Protocol.REPOSITORIES
+				+ File.separatorChar + REPOSITORY_ID);
+
 	}
 
 	@Override
@@ -26,14 +50,42 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 		if (graphDBHTTPRepository.getConnection() != null) {
 			graphDBHTTPRepository.getConnection().close();
 		}
+		repositoryManager.removeRepository(REPOSITORY_ID);
+		repositoryManager.shutDown();
+		System.clearProperty("http.maxConnections");
 	}
 
 	@Override
 	public RepositoryConnection startTransaction() {
-		HTTPRepository http = new HTTPRepository("http://localhost:7201/repositories/ldbc-snb-acid-test");
-		final RepositoryConnection connection = http.getConnection();
+		RepositoryConnection connection = graphDBHTTPRepository.getConnection();
 		connection.begin();
 		return connection;
+	}
+
+	private RepositoryConfig createRepositoryConfig()
+			throws RepositoryConfigException {
+		Model configGraph = new LinkedHashModel();
+
+		Resource repositoryNode = SimpleValueFactory.getInstance().createBNode("repo");
+		Resource repositoryImplNode = SimpleValueFactory.getInstance().createBNode("repoImpl");
+		Resource sailImplNode = SimpleValueFactory.getInstance().createBNode("sailImpl");
+
+		configGraph.add(SimpleValueFactory.getInstance()
+				.createStatement(repositoryNode, RDF.TYPE, RepositoryConfigSchema.REPOSITORY));
+		configGraph.add(SimpleValueFactory.getInstance().createStatement(repositoryNode,
+				RepositoryConfigSchema.REPOSITORYID, SimpleValueFactory.getInstance().createLiteral(REPOSITORY_ID)));
+
+		configGraph.add(SimpleValueFactory.getInstance()
+				.createStatement(repositoryNode, RepositoryConfigSchema.REPOSITORYIMPL, repositoryImplNode));
+		configGraph.add(SimpleValueFactory.getInstance()
+				.createStatement(repositoryImplNode, RepositoryConfigSchema.REPOSITORYTYPE,
+						SimpleValueFactory.getInstance().createLiteral("openrdf:SailRepository")));
+		configGraph.add(SimpleValueFactory.getInstance()
+				.createStatement(repositoryImplNode, SailRepositorySchema.SAILIMPL, sailImplNode));
+		configGraph.add(SimpleValueFactory.getInstance().createStatement(sailImplNode, SailConfigSchema.SAILTYPE,
+				SimpleValueFactory.getInstance().createLiteral("owlim:Sail")));
+
+		return RepositoryConfig.create(configGraph, repositoryNode);
 	}
 
 	@Override
@@ -48,7 +100,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 
 	@Override
 	public BindingSet runQuery(RepositoryConnection tt, String querySpecification, Map<String, Object> stringObjectMap) {
-		//return tt.prepareTupleQuery(QueryLanguage.SPARQL, querySpecification).evaluate();
 		return null;
 	}
 
@@ -444,30 +495,30 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 	 */
 	@Override
 	public void impInit() {
-//		executeUpdate("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-//				"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//				"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//				"insert data {\n" +
-//				"    sn:pers1 rdf:type snvoc:Person ;\n" +
-//				"             snvoc:id \"1\"^^xsd:long ;\n" +
-//				"             snvoc:version \"1\"^^xsd:long .\n" +
-//				"}");
+		executeUpdate("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+				"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+				"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+				"insert data {\n" +
+				"    sn:pers1 rdf:type snvoc:Person ;\n" +
+				"             snvoc:id \"1\"^^xsd:long ;\n" +
+				"             snvoc:version \"1\"^^xsd:long .\n" +
+				"}");
 	}
 
 	@Override
 	public Map<String, Object> impW(Map<String, Object> parameters) {
-//		executeUpdate(substituteParameters(
-//				"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//						"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//						"delete {\n" +
-//						"    sn:pers%personId% snvoc:version ?v .\n" +
-//						"} insert {\n" +
-//						"    sn:pers%personId% snvoc:version ?newV .\n" +
-//						"} where {\n" +
-//						"    sn:pers%personId% snvoc:version ?v .\n" +
-//						"    bind(?v + 1 as ?newV) .\n" +
-//						"}", parameters));
+		executeUpdate(substituteParameters(
+				"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+						"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+						"delete {\n" +
+						"    sn:pers%personId% snvoc:version ?v .\n" +
+						"} insert {\n" +
+						"    sn:pers%personId% snvoc:version ?newV .\n" +
+						"} where {\n" +
+						"    sn:pers%personId% snvoc:version ?v .\n" +
+						"    bind(?v + 1 as ?newV) .\n" +
+						"}", parameters));
 		return ImmutableMap.of();
 	}
 
@@ -475,34 +526,34 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 	public Map<String, Object> impR(Map<String, Object> parameters) {
 		long firstRead = 0;
 		long secondRead = 0;
-//		try (RepositoryConnection conn = startTransaction()) {
-//			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-//					"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//							"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//							"select ?firstRead where {\n" +
-//							"     sn:pers%personId% snvoc:version ?firstRead .\n" +
-//							"}", parameters)).evaluate()) {
-//				if (!queryResult.hasNext()) {
-//					throw new IllegalStateException("IMP missing query result.");
-//				}
-//				firstRead = Long.parseLong(queryResult.next().getValue("firstRead").stringValue());
-//			}
-//			sleep((Long) parameters.get("sleepTime"));
-//			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-//					"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//							"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//							"select ?secondRead where {\n" +
-//							"     sn:pers%personId% snvoc:version ?secondRead .\n" +
-//							"}", parameters)).evaluate()) {
-//				if (!queryResult.hasNext()) {
-//					throw new IllegalStateException("IMP missing query result.");
-//				}
-//				secondRead = Long.parseLong(queryResult.next().getValue("secondRead").stringValue());
-//			}
-//			commitTransaction(conn);
-//		} catch (Exception e) {
-//			throw new RuntimeException(e);
-//		}
+		try (RepositoryConnection conn = startTransaction()) {
+			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
+					"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+							"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+							"select ?firstRead where {\n" +
+							"     sn:pers%personId% snvoc:version ?firstRead .\n" +
+							"}", parameters)).evaluate()) {
+				if (!queryResult.hasNext()) {
+					throw new IllegalStateException("IMP missing query result.");
+				}
+				firstRead = Long.parseLong(queryResult.next().getValue("firstRead").stringValue());
+			}
+			sleep((Long) parameters.get("sleepTime"));
+			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
+					"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+							"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+							"select ?secondRead where {\n" +
+							"     sn:pers%personId% snvoc:version ?secondRead .\n" +
+							"}", parameters)).evaluate()) {
+				if (!queryResult.hasNext()) {
+					throw new IllegalStateException("IMP missing query result.");
+				}
+				secondRead = Long.parseLong(queryResult.next().getValue("secondRead").stringValue());
+			}
+			commitTransaction(conn);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
 	}
 
@@ -705,70 +756,70 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 	 */
 	@Override
 	public void frInit() {
-//		try (RepositoryConnection conn = startTransaction()) {
-//			for (int i = 1; i <= 4; i++) {
-//				conn.prepareUpdate("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//						"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//						"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//						"insert data {\n" +
-//						"    sn:pers" + i + " snvoc:version \"0\"^^xsd:integer .\n" +
-//						"    sn:pers" + i + " snvoc:id \"" + i + "\"^^xsd:long .\n" +
-//						"    sn:pers" + i + " snvoc:knows sn:pers" + (i == 4 ? 1 : i + 1) + " .\n" +
-//						"    sn:pers" + (i == 4 ? 1 : i + 1) + " snvoc:knows sn:pers" + i + " .\n" +
-//						"}").execute();
-//			}
-//			commitTransaction(conn);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
+		try (RepositoryConnection conn = startTransaction()) {
+			for (int i = 1; i <= 4; i++) {
+				conn.prepareUpdate("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+						"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+						"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+						"insert data {\n" +
+						"    sn:pers" + i + " snvoc:version \"0\"^^xsd:integer .\n" +
+						"    sn:pers" + i + " snvoc:id \"" + i + "\"^^xsd:long .\n" +
+						"    sn:pers" + i + " snvoc:knows sn:pers" + (i == 4 ? 1 : i + 1) + " .\n" +
+						"    sn:pers" + (i == 4 ? 1 : i + 1) + " snvoc:knows sn:pers" + i + " .\n" +
+						"}").execute();
+			}
+			commitTransaction(conn);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public Map<String, Object> frW(Map<String, Object> parameters) {
-//		try (RepositoryConnection conn = startTransaction()) {
-//			long pVersionIncreased;
-//			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL,
-//					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//							"select ?v where {\n" +
-//							"    ?p snvoc:id \"" + parameters.get("personId") + "\"^^xsd:long .\n" +
-//							"    ?p snvoc:version ?v .\n" +
-//							"}").evaluate()) {
-//				if (!queryResult.hasNext()) {
-//					throw new IllegalStateException("OTV missing person from query result.");
-//				}
-//				pVersionIncreased = Long.parseLong(queryResult.next().getValue("v").stringValue()) + 1;
-//			}
-//			conn.prepareUpdate(QueryLanguage.SPARQL,
-//					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//							"delete {\n" +
-//							"    ?p1 snvoc:version ?v1 .\n" +
-//							"    ?p2 snvoc:version ?v2 .\n" +
-//							"    ?p3 snvoc:version ?v3 .\n" +
-//							"    ?p4 snvoc:version ?v4 .\n" +
-//							"}\n" +
-//							"insert {\n" +
-//							"    ?p1 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
-//							"    ?p2 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
-//							"    ?p3 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
-//							"    ?p4 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
-//							"} where {\n" +
-//							"    ?p1 snvoc:id \"" + parameters.get("personId") + "\"^^xsd:long .\n" +
-//							"    ?p1 snvoc:knows ?p2 ;\n" +
-//							"        snvoc:version ?v1 .\n" +
-//							"    ?p2 snvoc:knows ?p3 ;\n" +
-//							"        snvoc:version ?v2 .\n" +
-//							"    ?p3 snvoc:knows ?p4 ;\n" +
-//							"        snvoc:version ?v3 .\n" +
-//							"    ?p4 snvoc:knows ?p1 ;\n" +
-//							"        snvoc:version ?v4 .\n" +
-//							"}").execute();
-//			commitTransaction(conn);
-//		} catch (Exception e) {
-//			throw new RuntimeException(e);
-//		}
+		try (RepositoryConnection conn = startTransaction()) {
+			long pVersionIncreased;
+			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL,
+					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+							"select ?v where {\n" +
+							"    ?p snvoc:id \"" + parameters.get("personId") + "\"^^xsd:long .\n" +
+							"    ?p snvoc:version ?v .\n" +
+							"}").evaluate()) {
+				if (!queryResult.hasNext()) {
+					throw new IllegalStateException("OTV missing person from query result.");
+				}
+				pVersionIncreased = Long.parseLong(queryResult.next().getValue("v").stringValue()) + 1;
+			}
+			conn.prepareUpdate(QueryLanguage.SPARQL,
+					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+							"delete {\n" +
+							"    ?p1 snvoc:version ?v1 .\n" +
+							"    ?p2 snvoc:version ?v2 .\n" +
+							"    ?p3 snvoc:version ?v3 .\n" +
+							"    ?p4 snvoc:version ?v4 .\n" +
+							"}\n" +
+							"insert {\n" +
+							"    ?p1 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
+							"    ?p2 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
+							"    ?p3 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
+							"    ?p4 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
+							"} where {\n" +
+							"    ?p1 snvoc:id \"" + parameters.get("personId") + "\"^^xsd:long .\n" +
+							"    ?p1 snvoc:knows ?p2 ;\n" +
+							"        snvoc:version ?v1 .\n" +
+							"    ?p2 snvoc:knows ?p3 ;\n" +
+							"        snvoc:version ?v2 .\n" +
+							"    ?p3 snvoc:knows ?p4 ;\n" +
+							"        snvoc:version ?v3 .\n" +
+							"    ?p4 snvoc:knows ?p1 ;\n" +
+							"        snvoc:version ?v4 .\n" +
+							"}").execute();
+			commitTransaction(conn);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		return ImmutableMap.of();
 	}
 
@@ -776,50 +827,50 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 	public Map<String, Object> frR(Map<String, Object> parameters) {
 		final List<Object> firstRead = new ArrayList<>();
 		final List<Object> secondRead = new ArrayList<>();
-//		try (RepositoryConnection conn = startTransaction()) {
-//			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-//					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//							"select ?v1 ?v2 ?v3 ?v4 where {\n" +
-//							"    ?p1 snvoc:id \"%personId%\"^^xsd:long .\n" +
-//							"    ?p1 snvoc:knows ?p2 ; snvoc:version ?v1 .\n" +
-//							"    ?p2 snvoc:knows ?p3 ; snvoc:version ?v2 .\n" +
-//							"    ?p3 snvoc:knows ?p4 ; snvoc:version ?v3 .\n" +
-//							"    ?p4 snvoc:knows ?p1 ; snvoc:version ?v4 .\n" +
-//							"}", parameters)).evaluate()) {
-//				if (!queryResult.hasNext()) {
-//					throw new IllegalStateException("OTV missing query result.");
-//				}
-//				firstRead.add(Long.parseLong(queryResult.next().getValue("v1").stringValue()));
-//				firstRead.add(Long.parseLong(queryResult.next().getValue("v2").stringValue()));
-//				firstRead.add(Long.parseLong(queryResult.next().getValue("v3").stringValue()));
-//				firstRead.add(Long.parseLong(queryResult.next().getValue("v4").stringValue()));
-//			}
-//			sleep((Long) parameters.get("sleepTime"));
-//			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-//					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//							"select ?v1 ?v2 ?v3 ?v4 where {\n" +
-//							"    ?p1 snvoc:id \"%personId%\"^^xsd:long .\n" +
-//							"    ?p1 snvoc:knows ?p2 ; snvoc:version ?v1 .\n" +
-//							"    ?p2 snvoc:knows ?p3 ; snvoc:version ?v2 .\n" +
-//							"    ?p3 snvoc:knows ?p4 ; snvoc:version ?v3 .\n" +
-//							"    ?p4 snvoc:knows ?p1 ; snvoc:version ?v4 .\n" +
-//							"}", parameters)).evaluate()) {
-//				if (!queryResult.hasNext()) {
-//					throw new IllegalStateException("OTV missing query result.");
-//				}
-//				secondRead.add(Long.parseLong(queryResult.next().getValue("v1").stringValue()));
-//				secondRead.add(Long.parseLong(queryResult.next().getValue("v2").stringValue()));
-//				secondRead.add(Long.parseLong(queryResult.next().getValue("v3").stringValue()));
-//				secondRead.add(Long.parseLong(queryResult.next().getValue("v4").stringValue()));
-//			}
-//			commitTransaction(conn);
-//		} catch (Exception e) {
-//			throw new RuntimeException(e);
-//		}
+		try (RepositoryConnection conn = startTransaction()) {
+			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
+					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+							"select ?v1 ?v2 ?v3 ?v4 where {\n" +
+							"    ?p1 snvoc:id \"%personId%\"^^xsd:long .\n" +
+							"    ?p1 snvoc:knows ?p2 ; snvoc:version ?v1 .\n" +
+							"    ?p2 snvoc:knows ?p3 ; snvoc:version ?v2 .\n" +
+							"    ?p3 snvoc:knows ?p4 ; snvoc:version ?v3 .\n" +
+							"    ?p4 snvoc:knows ?p1 ; snvoc:version ?v4 .\n" +
+							"}", parameters)).evaluate()) {
+				if (!queryResult.hasNext()) {
+					throw new IllegalStateException("OTV missing query result.");
+				}
+				firstRead.add(Long.parseLong(queryResult.next().getValue("v1").stringValue()));
+				firstRead.add(Long.parseLong(queryResult.next().getValue("v2").stringValue()));
+				firstRead.add(Long.parseLong(queryResult.next().getValue("v3").stringValue()));
+				firstRead.add(Long.parseLong(queryResult.next().getValue("v4").stringValue()));
+			}
+			sleep((Long) parameters.get("sleepTime"));
+			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
+					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+							"select ?v1 ?v2 ?v3 ?v4 where {\n" +
+							"    ?p1 snvoc:id \"%personId%\"^^xsd:long .\n" +
+							"    ?p1 snvoc:knows ?p2 ; snvoc:version ?v1 .\n" +
+							"    ?p2 snvoc:knows ?p3 ; snvoc:version ?v2 .\n" +
+							"    ?p3 snvoc:knows ?p4 ; snvoc:version ?v3 .\n" +
+							"    ?p4 snvoc:knows ?p1 ; snvoc:version ?v4 .\n" +
+							"}", parameters)).evaluate()) {
+				if (!queryResult.hasNext()) {
+					throw new IllegalStateException("OTV missing query result.");
+				}
+				secondRead.add(Long.parseLong(queryResult.next().getValue("v1").stringValue()));
+				secondRead.add(Long.parseLong(queryResult.next().getValue("v2").stringValue()));
+				secondRead.add(Long.parseLong(queryResult.next().getValue("v3").stringValue()));
+				secondRead.add(Long.parseLong(queryResult.next().getValue("v4").stringValue()));
+			}
+			commitTransaction(conn);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
 	}
 
@@ -828,106 +879,35 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 	 */
 	@Override
 	public void luInit() {
-//		try (RepositoryConnection conn = startTransaction()) {
-//			conn.prepareUpdate("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//					"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//					"insert data {\n" +
-//					"    sn:pers1 snvoc:id \"1\"^^xsd:long ;\n" +
-//					"             rdf:type snvoc:Person ;\n" +
-//					"             snvoc:numFriends \"0\"^^xsd:long .\n" +
-//					"}").execute();
-//			commitTransaction(conn);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
+		executeUpdate("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+				"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+				"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+				"insert data {\n" +
+				"    sn:pers1 snvoc:id \"1\"^^xsd:long ;\n" +
+				"             rdf:type snvoc:Person ;\n" +
+				"             snvoc:numFriends \"0\"^^xsd:long .\n" +
+				"}");
 	}
 
 	@Override
 	public Map<String, Object> luW(Map<String, Object> parameters) {
-//		try (RepositoryConnection conn = startTransaction()) {
-//
-////			long numFr;
-////			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-////					"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-////							"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-////							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-////							"select ?n where {\n" +
-////							"    sn:pers%person1Id% snvoc:numFriends ?n ." +
-////							"}", parameters)).evaluate()) {
-////				if (!queryResult.hasNext()) {
-////					throw new IllegalStateException("OTV missing person from query result.");
-////				}
-////				numFr = Long.parseLong(queryResult.next().getValue("n").stringValue()) + 1;
-////			}
-////
-////			conn.prepareUpdate(substituteParameters("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-////					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-////					"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-////					"delete {\n" +
-////					"    sn:pers%person1Id% snvoc:numFriends ?n .\n" +
-////					"} insert {\n" +
-////					"    sn:pers%person1Id% snvoc:knows sn:pers%person2Id% .\n" +
-////					"    sn:pers%person1Id% snvoc:numFriends " + numFr + " .\n" +
-////					"} where {\n" +
-////					"    sn:pers%person1Id% snvoc:numFriends ?n .\n" +
-////					"}", parameters)).execute();
-//
-////			conn.prepareUpdate(substituteParameters("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-////					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-////					"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-////					"delete {\n" +
-////					"    sn:pers%person1Id% snvoc:numFriends ?n .\n" +
-////					"} insert {\n" +
-////					"    sn:pers%person1Id% snvoc:knows sn:pers%person2Id% .\n" +
-////					"    sn:pers%person1Id% snvoc:numFriends ?incrFr .\n" +
-////					"} where {\n" +
-////					"    sn:pers%person1Id% snvoc:numFriends ?n .\n" +
-////					"    bind(?n + 1 as ?incrFr) .\n" +
-////					"}", parameters)).execute();
-//
-//			conn.prepareUpdate(substituteParameters("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//					"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//					"delete {\n" +
-//					"    ?p1 snvoc:numFriends ?n .\n" +
-//					"} insert {\n" +
-//					"    ?p1 snvoc:knows sn:pers%person2Id% .\n" +
-//					"    ?p1 snvoc:numFriends ?incrFr .\n" +
-//					"} where {\n" +
-//					"    ?p1 snvoc:numFriends ?n .\n" +
-//					"    ?p1 snvoc:id \"1\"^^xsd:long . \n" +
-//					"    bind(?n + 1 as ?incrFr) .\n" +
-//					"}", parameters)).execute();
-//
-////			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-////					"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-////							"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-////							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-////							"select (count (snvoc:knows) as ?numKnowsEdges) ?numFriendsProp where {\n" +
-////							"    ?p snvoc:id \"%personId%\"^^xsd:long .\n" +
-////							"    optional {\n" +
-////							"        ?p snvoc:knows ?fr .\n" +
-////							"    ?p snvoc:numFriends ?numFriendsProp . \n" +
-////							"    }\n" +
-////							"} group by ?p ?numFriendsProp", parameters)).evaluate()) {
-////				if (!queryResult.hasNext()) {
-////					throw new IllegalStateException("OTV missing query result.");
-////				}
-////				final BindingSet next = queryResult.next();
-////				long numKnowsEdges = Long.parseLong(next.getValue("numKnowsEdges").stringValue());
-////				long numFriends = Long.parseLong(next.getValue("numFriendsProp").stringValue());
-////
-////				System.out.println("edges " + numKnowsEdges);
-////				System.out.println("friends " + numFriends);
-////
-////			}
-//
-//
-//			commitTransaction(conn);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
+		try (RepositoryConnection conn = startTransaction()) {
+			conn.prepareUpdate(substituteParameters("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+					"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+					"delete {\n" +
+					"    sn:pers%person1Id% snvoc:numFriends ?n .\n" +
+					"} insert {\n" +
+					"    sn:pers%person1Id% snvoc:knows sn:pers%person2Id% .\n" +
+					"    sn:pers%person1Id% snvoc:numFriends ?incrFr .\n" +
+					"} where {\n" +
+					"    sn:pers%person1Id% snvoc:numFriends ?n .\n" +
+					"    bind(?n + 1 as ?incrFr) .\n" +
+					"}", parameters)).execute();
+			commitTransaction(conn);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return ImmutableMap.of();
 	}
 
@@ -935,27 +915,27 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 	public Map<String, Object> luR(Map<String, Object> parameters) {
 		long numKnowsEdges = 0;
 		long numFriends = 0;
-//		try (RepositoryConnection conn = startTransaction()) {
-//			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-//					"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-//							"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-//							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-//							"select (count (snvoc:knows) as ?numKnowsEdges) ?numFriendsProp where {\n" +
-//							"    ?p snvoc:id \"%personId%\"^^xsd:long .\n" +
-//							"    ?p snvoc:knows ?fr .\n" +
-//							"    ?p snvoc:numFriends ?numFriendsProp . \n" +
-//							"} group by ?p ?numFriendsProp", parameters)).evaluate()) {
-//				if (!queryResult.hasNext()) {
-//					throw new IllegalStateException("OTV missing query result.");
-//				}
-//				final BindingSet next = queryResult.next();
-//				numKnowsEdges = Long.parseLong(next.getValue("numKnowsEdges").stringValue());
-//				numFriends = Long.parseLong(next.getValue("numFriendsProp").stringValue());
-//			}
-//			commitTransaction(conn);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
+		try (RepositoryConnection conn = startTransaction()) {
+			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
+					"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
+							"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
+							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+							"select (count (snvoc:knows) as ?numKnowsEdges) ?numFriendsProp where {\n" +
+							"    ?p snvoc:id \"%personId%\"^^xsd:long .\n" +
+							"    ?p snvoc:knows ?fr .\n" +
+							"    ?p snvoc:numFriends ?numFriendsProp . \n" +
+							"} group by ?p ?numFriendsProp", parameters)).evaluate()) {
+				if (!queryResult.hasNext()) {
+					throw new IllegalStateException("OTV missing query result.");
+				}
+				final BindingSet next = queryResult.next();
+				numKnowsEdges = Long.parseLong(next.getValue("numKnowsEdges").stringValue());
+				numFriends = Long.parseLong(next.getValue("numFriendsProp").stringValue());
+			}
+			commitTransaction(conn);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		return ImmutableMap.of("numKnowsEdges", numKnowsEdges, "numFriendsProp", numFriends);
 	}

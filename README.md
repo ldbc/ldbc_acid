@@ -12,6 +12,7 @@ See the chapter on "ACID tests" in the [LDBC SNB specification](https://ldbc.git
 * TigerGraph
 * JanusGraph (various backends)
 * PostgreSQL (various isolation levels)
+* GraphDB (Read Committed isolation level)
 
 ## Getting started
 
@@ -79,3 +80,10 @@ docker stop acid-tg
 Note that the license in the container is a trial license supporting at most 100GB data. This license is sufficient for ACID tests.
 
 TigerGraph has two modes of running query: non-distributed and distributed. The ABORT function currently does not work in the non-distributed mode but works for distributed. Atomicity and G1aW are implemented in the distributed query and all other queries are implemented using non-distributed query. All the tests pass.
+
+### GraphDB
+
+Version 10.0.x:
+```bash
+docker run -p 127.0.0.1:7200:7200 --name graphdb-instance-name -t ontotext/graphdb:10.0.2
+```
