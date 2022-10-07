@@ -419,10 +419,11 @@ public abstract class AcidTest<TTestDriver extends TestDriver> {
     }
 
     @After
-    public void cleanup() throws InterruptedException {
+    public void cleanup() throws Exception {
 //        System.out.println(Thread.currentThread().getName() + ": Shutting down executor service...");
         executorService.shutdown();
         executorService.awaitTermination(5, TimeUnit.HOURS);
+        testDriver.close();
     }
 
 }
