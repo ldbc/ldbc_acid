@@ -67,30 +67,22 @@ CREATE OR REPLACE QUERY g1Init(UINT id, UINT version) {
 }
 // ABOR function is abnormal in non-distributed
 CREATE OR REPLACE DISTRIBUTED QUERY g1aW(VERTEX<Person> personId, UINT sleepTime) {
-  UINT a,b;
-  DATETIME t0;
   P = {personId};
   // TigerGraph does not have sleep function
   t0 = now();
-  WHILE TRUE DO 
-    IF datetime_diff(now(),t0) >= sleepTime THEN BREAK; END; 
-  END;
+  SLEEP(sleepTime*1000);
   UPDATE p FROM P:p SET p.version = 2;
   t0 = now();
-  WHILE TRUE DO 
-    IF datetime_diff(now(),t0) >= sleepTime THEN BREAK; END; 
-  END;
+  SLEEP(sleepTime*1000);
   ABORT;
 }
 
 CREATE OR REPLACE QUERY g1bW(VERTEX<Person> personId, UINT sleepTime, UINT even, UINT odd) {
-  UINT a;
-  DATETIME t0;
   P = {personId};
   // TigerGraph does not have sleep function
   UPDATE p FROM P:p SET p.version = even;
   t0 = now();
-  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  SLEEP(sleepTime*1000);
   UPDATE p FROM P:p SET p.version = odd;
 }
 
@@ -115,12 +107,11 @@ CREATE OR REPLACE QUERY impW(VERTEX<Person> personId) {
 }
 
 CREATE OR REPLACE QUERY impR(VERTEX<Person> personId, UINT sleepTime) {
-  UINT firstRead, secondRead, a;
-  DATETIME t0;
+  UINT firstRead, secondRead;
   P = {personId};
   tmp = SELECT p FROM P:p ACCUM firstRead = p.version;
   t0 = now();
-  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  SLEEP(sleepTime*1000);
   tmp = SELECT p FROM P:p ACCUM secondRead = p.version;
   PRINT firstRead, secondRead; 
 }
@@ -135,11 +126,10 @@ CREATE OR REPLACE QUERY pmpW(UINT personId, UINT postId) {
 }
 
 CREATE OR REPLACE QUERY pmpR(VERTEX<Post> postId, UINT sleepTime) SYNTAX v2{
-  DATETIME t0; UINT a;
   Po = {postId};
   P1 = SELECT p FROM Po-(<LIKES)- Person:p;
   t0 = now();
-  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  SLEEP(sleepTime*1000);
   P2 = SELECT p FROM Po-(<LIKES)- Person:p;
   PRINT P1.size() AS firstRead, P2.size() AS secondRead;
 }
@@ -172,7 +162,6 @@ CREATE OR REPLACE QUERY otvR(Vertex<Person> personId, UINT sleepTime) syntax v2 
   // Match a circle
   OrAccum @visited;
   ListAccum<UINT> @@firstRead, @@secondRead;
-  DATETIME t0; UINT a;
   S = {personId};
   P1 = SELECT p FROM S:s -(KNOWS)- Person:p ACCUM s.@visited += True LIMIT 1;
   P2 = SELECT p FROM P1:s -(KNOWS)- Person:p WHERE NOT p.@visited ACCUM s.@visited += True LIMIT 1;
@@ -181,7 +170,7 @@ CREATE OR REPLACE QUERY otvR(Vertex<Person> personId, UINT sleepTime) syntax v2 
   P2 = SELECT p FROM P3 -(KNOWS)- P2:p POST-ACCUM @@firstRead += p.version;
   P1 = SELECT p FROM P2 -(KNOWS)- P1:p POST-ACCUM @@firstRead += p.version;
   t0 = now();
-  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  SLEEP(sleepTime*1000);
   P3 = SELECT p FROM S:s -(KNOWS)- P3:p ACCUM @@secondRead += s.version, @@secondRead += p.version;
   P2 = SELECT p FROM P3 -(KNOWS)- P2:p POST-ACCUM @@secondRead += p.version;
   P1 = SELECT p FROM P2 -(KNOWS)- P1:p POST-ACCUM @@secondRead += p.version;
@@ -208,26 +197,23 @@ CREATE OR REPLACE QUERY wsInit(UINT person1Id, UINT person2Id) {
 /* fail
 CREATE OR REPLACE DISTRIBUTED QUERY wsW(VERTEX<Person> person1Id, VERTEX<Person> person2Id, UINT sleepTime, VERTEX<Person> personId) {
   SumAccum<UINT> @@sum;
-  DATETIME t0; UINT a;
   P1 = {person1Id}; P2 = {person2Id};
   PP = P1 UNION P2;
   tmp = SELECT s FROM PP:s ACCUM @@sum+=s.version;
   IF @@sum < 100 THEN ABORT; END;
   t0 = now();
-  WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+  SLEEP(sleepTime*1000);
   P3 = {personId};
   UPDATE p FROM P3:p SET p.version = @@sum - 100;
 }
 */
 CREATE OR REPLACE QUERY wsW(VERTEX<Person> person1Id, VERTEX<Person> person2Id, UINT sleepTime, VERTEX<Person> personId) {
   SumAccum<UINT> @@sum;
-  DATETIME t0; UINT a;
   P1 = {person1Id}; P2 = {person2Id};
   PP = P1 UNION P2;
   tmp = SELECT s FROM PP:s ACCUM @@sum+=s.version;
   IF @@sum >= 100 THEN 
-    t0 = now();
-    WHILE datetime_diff(now(),t0) < sleepTime DO a += 1; END;
+    SLEEP(sleepTime*1000);
     P3 = {personId};
     UPDATE p FROM P3:p SET p.version = @@sum - 100;
   END;
