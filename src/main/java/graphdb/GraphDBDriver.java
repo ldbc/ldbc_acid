@@ -627,6 +627,38 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 	 */
 	@Override
 	public void otvInit() {
+		initData();
+	}
+
+	@Override
+	public Map<String, Object> otvW(Map<String, Object> parameters) {
+		return initWriteTransactions(parameters);
+	}
+
+	@Override
+	public Map<String, Object> otvR(Map<String, Object> parameters) {
+		return initReadTransactions(parameters);
+	}
+
+	/**
+	 * Cut Anomalies: Fractured Read (FR) anomaly
+	 */
+	@Override
+	public void frInit() {
+		initData();
+	}
+
+	@Override
+	public Map<String, Object> frW(Map<String, Object> parameters) {
+		return initWriteTransactions(parameters);
+	}
+
+	@Override
+	public Map<String, Object> frR(Map<String, Object> parameters) {
+		return initReadTransactions(parameters);
+	}
+
+	private void initData() {
 		try (RepositoryConnection conn = startTransaction()) {
 			for (int i = 1; i <= 4; i++) {
 				conn.prepareUpdate("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
@@ -645,8 +677,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 		}
 	}
 
-	@Override
-	public Map<String, Object> otvW(Map<String, Object> parameters) {
+	private Map<String, Object> initWriteTransactions(Map<String, Object> parameters) {
 		Random random = new Random();
 		for (int i = 0; i < 100; i++) {
 			int max = (int) parameters.get("cycleSize") + 1;
@@ -661,7 +692,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 								"    ?p snvoc:version ?v .\n" +
 								"}").evaluate()) {
 					if (!queryResult.hasNext()) {
-						throw new IllegalStateException("OTV missing person from query result.");
+						throw new IllegalStateException("Missing person from query result.");
 					}
 					pVersionIncreased = Long.parseLong(queryResult.next().getValue("v").stringValue()) + 1;
 				}
@@ -699,8 +730,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 		return ImmutableMap.of();
 	}
 
-	@Override
-	public Map<String, Object> otvR(Map<String, Object> parameters) {
+	private Map<String, Object> initReadTransactions(Map<String, Object> parameters) {
 		final List<Object> firstRead = new ArrayList<>();
 		final List<Object> secondRead = new ArrayList<>();
 		try (RepositoryConnection conn = startTransaction()) {
@@ -716,7 +746,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 							"    ?p4 snvoc:knows ?p1 ; snvoc:version ?v4 .\n" +
 							"}", parameters)).evaluate()) {
 				if (!queryResult.hasNext()) {
-					throw new IllegalStateException("OTV missing query result.");
+					throw new IllegalStateException("Missing query result.");
 				}
 
 				firstRead.add(Long.parseLong(queryResult.next().getValue("v1").stringValue()));
@@ -737,130 +767,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 							"    ?p4 snvoc:knows ?p1 ; snvoc:version ?v4 .\n" +
 							"}", parameters)).evaluate()) {
 				if (!queryResult.hasNext()) {
-					throw new IllegalStateException("OTV missing query result.");
-				}
-				secondRead.add(Long.parseLong(queryResult.next().getValue("v1").stringValue()));
-				secondRead.add(Long.parseLong(queryResult.next().getValue("v2").stringValue()));
-				secondRead.add(Long.parseLong(queryResult.next().getValue("v3").stringValue()));
-				secondRead.add(Long.parseLong(queryResult.next().getValue("v4").stringValue()));
-			}
-			commitTransaction(conn);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
-	}
-
-	/**
-	 * Cut Anomalies: Fractured Read (FR) anomaly
-	 */
-	@Override
-	public void frInit() {
-		try (RepositoryConnection conn = startTransaction()) {
-			for (int i = 1; i <= 4; i++) {
-				conn.prepareUpdate("PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-						"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-						"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-						"insert data {\n" +
-						"    sn:pers" + i + " snvoc:version \"0\"^^xsd:integer .\n" +
-						"    sn:pers" + i + " snvoc:id \"" + i + "\"^^xsd:long .\n" +
-						"    sn:pers" + i + " snvoc:knows sn:pers" + (i == 4 ? 1 : i + 1) + " .\n" +
-						"    sn:pers" + (i == 4 ? 1 : i + 1) + " snvoc:knows sn:pers" + i + " .\n" +
-						"}").execute();
-			}
-			commitTransaction(conn);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public Map<String, Object> frW(Map<String, Object> parameters) {
-		try (RepositoryConnection conn = startTransaction()) {
-			long pVersionIncreased;
-			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL,
-					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-							"select ?v where {\n" +
-							"    ?p snvoc:id \"" + parameters.get("personId") + "\"^^xsd:long .\n" +
-							"    ?p snvoc:version ?v .\n" +
-							"}").evaluate()) {
-				if (!queryResult.hasNext()) {
-					throw new IllegalStateException("OTV missing person from query result.");
-				}
-				pVersionIncreased = Long.parseLong(queryResult.next().getValue("v").stringValue()) + 1;
-			}
-			conn.prepareUpdate(QueryLanguage.SPARQL,
-					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-							"delete {\n" +
-							"    ?p1 snvoc:version ?v1 .\n" +
-							"    ?p2 snvoc:version ?v2 .\n" +
-							"    ?p3 snvoc:version ?v3 .\n" +
-							"    ?p4 snvoc:version ?v4 .\n" +
-							"}\n" +
-							"insert {\n" +
-							"    ?p1 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
-							"    ?p2 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
-							"    ?p3 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
-							"    ?p4 snvoc:version \"" + pVersionIncreased + "\"^^xsd:long .\n" +
-							"} where {\n" +
-							"    ?p1 snvoc:id \"" + parameters.get("personId") + "\"^^xsd:long .\n" +
-							"    ?p1 snvoc:knows ?p2 ;\n" +
-							"        snvoc:version ?v1 .\n" +
-							"    ?p2 snvoc:knows ?p3 ;\n" +
-							"        snvoc:version ?v2 .\n" +
-							"    ?p3 snvoc:knows ?p4 ;\n" +
-							"        snvoc:version ?v3 .\n" +
-							"    ?p4 snvoc:knows ?p1 ;\n" +
-							"        snvoc:version ?v4 .\n" +
-							"}").execute();
-			commitTransaction(conn);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		return ImmutableMap.of();
-	}
-
-	@Override
-	public Map<String, Object> frR(Map<String, Object> parameters) {
-		final List<Object> firstRead = new ArrayList<>();
-		final List<Object> secondRead = new ArrayList<>();
-		try (RepositoryConnection conn = startTransaction()) {
-			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-							"select ?v1 ?v2 ?v3 ?v4 where {\n" +
-							"    ?p1 snvoc:id \"%personId%\"^^xsd:long .\n" +
-							"    ?p1 snvoc:knows ?p2 ; snvoc:version ?v1 .\n" +
-							"    ?p2 snvoc:knows ?p3 ; snvoc:version ?v2 .\n" +
-							"    ?p3 snvoc:knows ?p4 ; snvoc:version ?v3 .\n" +
-							"    ?p4 snvoc:knows ?p1 ; snvoc:version ?v4 .\n" +
-							"}", parameters)).evaluate()) {
-				if (!queryResult.hasNext()) {
-					throw new IllegalStateException("OTV missing query result.");
-				}
-				firstRead.add(Long.parseLong(queryResult.next().getValue("v1").stringValue()));
-				firstRead.add(Long.parseLong(queryResult.next().getValue("v2").stringValue()));
-				firstRead.add(Long.parseLong(queryResult.next().getValue("v3").stringValue()));
-				firstRead.add(Long.parseLong(queryResult.next().getValue("v4").stringValue()));
-			}
-			sleep((Long) parameters.get("sleepTime"));
-			try (TupleQueryResult queryResult = conn.prepareTupleQuery(QueryLanguage.SPARQL, substituteParameters(
-					"PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>\n" +
-							"PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-							"PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>\n" +
-							"select ?v1 ?v2 ?v3 ?v4 where {\n" +
-							"    ?p1 snvoc:id \"%personId%\"^^xsd:long .\n" +
-							"    ?p1 snvoc:knows ?p2 ; snvoc:version ?v1 .\n" +
-							"    ?p2 snvoc:knows ?p3 ; snvoc:version ?v2 .\n" +
-							"    ?p3 snvoc:knows ?p4 ; snvoc:version ?v3 .\n" +
-							"    ?p4 snvoc:knows ?p1 ; snvoc:version ?v4 .\n" +
-							"}", parameters)).evaluate()) {
-				if (!queryResult.hasNext()) {
-					throw new IllegalStateException("OTV missing query result.");
+					throw new IllegalStateException("Missing query result.");
 				}
 				secondRead.add(Long.parseLong(queryResult.next().getValue("v1").stringValue()));
 				secondRead.add(Long.parseLong(queryResult.next().getValue("v2").stringValue()));
