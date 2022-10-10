@@ -87,3 +87,5 @@ Version 10.0.x:
 ```bash
 docker run -p 127.0.0.1:7200:7200 --name graphdb-instance-name -t ontotext/graphdb:10.0.2
 ```
+
+Check [GraphDB Docker Hub](https://hub.docker.com/r/ontotext/graphdb/) for more information on how to use graphdb images.
