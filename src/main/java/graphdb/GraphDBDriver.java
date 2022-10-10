@@ -209,8 +209,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				commitTransaction(conn);
 				return ImmutableMap.of("numPersons", numPersons, "numNames", numNames, "numEmails", numEmails);
 			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -287,8 +285,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 			}
 			commitTransaction(conn);
 			return ImmutableMap.of("p1VersionHistory", p1VersionHistory, "p2VersionHistory", p2VersionHistory, "kVersionHistory", kVersionHistory);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -337,8 +333,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 							"}", ImmutableMap.of("personId", personId))).execute();
 			sleep((Long) parameters.get("sleepTime"));
 			abortTransaction(conn);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 		return ImmutableMap.of();
 	}
@@ -359,8 +353,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				commitTransaction(conn);
 				return ImmutableMap.of("pVersion", pVersion);
 			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -405,8 +397,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 					"    sn:pers%personId% snvoc:version ?p .\n" +
 					"}", parameters)).execute();
 			commitTransaction(conn);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 		return ImmutableMap.of();
 	}
@@ -427,8 +417,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				commitTransaction(conn);
 				return ImmutableMap.of("pVersion", pVersion);
 			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -482,10 +470,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				pVersion = Long.parseLong(next.getValue("person2Version").stringValue());
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
-
 		return ImmutableMap.of("person2Version", pVersion);
 	}
 
@@ -551,8 +536,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				secondRead = Long.parseLong(queryResult.next().getValue("secondRead").stringValue());
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 		return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
 	}
@@ -616,8 +599,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				secondRead = Long.parseLong(queryResult.next().getValue("secondRead").stringValue());
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 		return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
 	}
@@ -672,8 +653,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 						"}").execute();
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -723,8 +702,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 								"        snvoc:version ?v4 .\n" +
 								"}").execute();
 				commitTransaction(conn);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
 			}
 		}
 		return ImmutableMap.of();
@@ -775,8 +752,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				secondRead.add(Long.parseLong(queryResult.next().getValue("v4").stringValue()));
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 		return ImmutableMap.of("firstRead", firstRead, "secondRead", secondRead);
 	}
@@ -812,8 +787,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 					"    bind(?n + 1 as ?incrFr) .\n" +
 					"}", parameters)).execute();
 			commitTransaction(conn);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return ImmutableMap.of();
 	}
@@ -840,10 +813,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				numFriends = Long.parseLong(next.getValue("numFriendsProp").stringValue());
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-
 		return ImmutableMap.of("numKnowsEdges", numKnowsEdges, "numFriendsProp", numFriends);
 	}
 
@@ -865,8 +835,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 						"}", ImmutableMap.of("person1Id", 2 * i - 1, "person2Id", 2 * i))).execute();
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -904,8 +872,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				}
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return ImmutableMap.of();
 	}
@@ -935,8 +901,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				}
 			}
 			commitTransaction(conn);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return ImmutableMap.of();
 	}
@@ -945,8 +909,6 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 		try (RepositoryConnection conn = startTransaction()) {
 			conn.prepareUpdate(QueryLanguage.SPARQL, querySpecification).execute();
 			commitTransaction(conn);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 
