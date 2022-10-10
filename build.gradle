@@ -16,6 +16,9 @@ repositories {
     jcenter() // for TigerGraph
     maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
     flatDir { dirs 'lib' }
+    maven {
+        url "https://maven.ontotext.com/repository/owlim-releases"
+    }
 }
 
 dependencies {
@@ -66,6 +69,11 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.1'
     compile 'io.gsonfire:gson-fire:1.8.3'
     compile 'org.threeten:threetenbp:1.3.5'
-    
+
+    // GraphDB
+    compile (group: 'com.ontotext.graphdb', name: 'graphdb-runtime', version: '10.0.1') {
+        exclude group: 'it.unibz.inf.ontop'
+    }
+
     testCompile 'junit:junit:4.12'
 }
