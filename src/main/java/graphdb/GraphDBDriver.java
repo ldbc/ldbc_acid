@@ -148,7 +148,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 				"    sn:pers%person2Id% rdf:type snvoc:Person .\n" +
 				"    _:knows snvoc:creationDate \"%since%\"^^xsd:integer .   \n" +
 				"    sn:pers%person2Id% snvoc:id \"%person2Id%\"^^xsd:long .\n" +
-				"    sn:pers%person1Id% snvoc:email \"%$newEmail%\" .       \n" +
+				"    sn:pers%person1Id% snvoc:email \"%newEmail%\" .       \n" +
 				"}", parameters));
 	}
 
