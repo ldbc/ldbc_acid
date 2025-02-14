@@ -849,7 +849,7 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 							"             snvoc:id ?p1Id .\n" +
 							"    sn:pers%person2Id% snvoc:version ?p2v ;\n" +
 							"             snvoc:id ?p2Id .\n" +
-							"    filter (?p1v + ?p2v >= 0)\n" +
+							"    filter (?p1v + ?p2v >= 100)\n" +
 							"}", parameters)).evaluate()) {
 				if (queryResult.hasNext()) {
 					sleep((Long) parameters.get("sleepTime"));

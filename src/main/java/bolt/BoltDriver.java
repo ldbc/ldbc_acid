@@ -448,7 +448,7 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
         // if (p1.value+p2.value < 0) then abort --> if (p1.value+p2.value >= 0) then do the update
         final StatementResult result = tt.run(
                 "MATCH (p1:Person {id: $person1Id}), (p2:Person {id: $person2Id})\n" +
-                "WHERE p1.value + p2.value >= 0\n" +
+                "WHERE p1.value + p2.value >= 100\n" +
                 "RETURN p1, p2", parameters);
 
         if (result.hasNext()) {
