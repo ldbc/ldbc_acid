@@ -472,7 +472,8 @@ public class BoltDriver extends TestDriver<Transaction, Map<String, Object>, Sta
         final Transaction tt = startTransaction();
         // we select pairs of persons using (id, id+1) pairs
         final StatementResult result = tt.run("MATCH (p1:Person), (p2:Person {id: p1.id+1})\n" +
-                "WHERE p1.value + p2.value <= 0\n"+
+                "WHERE p1.id % 2 = 1\n" +
+                "  AND p1.value + p2.value <= 0\n"+
                 "RETURN p1.id AS p1id, p1.value AS p1value, p2.id AS p2id, p2.value AS p2value");
 
         if (result.hasNext()) {

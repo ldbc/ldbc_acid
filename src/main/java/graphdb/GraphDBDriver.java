@@ -891,8 +891,11 @@ public class GraphDBDriver extends TestDriver<RepositoryConnection, Map<String, 
 							"             snvoc:value ?p2value .              \n" +
 							"    filter (?p1value + ?p2value <= 0) .\n" +
 							"}", parameters)).evaluate()) {
-				if (queryResult.hasNext()) {
+				while (queryResult.hasNext()) {
 					final BindingSet next = queryResult.next();
+					if (Long.parseLong(next.getValue("p1id").stringValue()) % 2 == 0) {
+						continue;
+					}
 					return ImmutableMap.of(
 							"p1id", next.getValue("p1id"),
 							"p1value", next.getValue("p1value"),

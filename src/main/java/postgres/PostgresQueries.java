@@ -172,5 +172,6 @@ public final class PostgresQueries {
     public final static String wsR = "select p1.id AS p1id, p1.value AS p1value, p2.id AS p2id, p2.value AS p2value " +
             "from person p1, person p2 " +
             "where p1.id+1 = p2.id " +
+            "and p1.id % 2 = 1 " +
             "and p1.value + p2.value <= 0 ";
 }

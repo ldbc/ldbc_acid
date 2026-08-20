@@ -1484,6 +1484,9 @@ public class DgraphDriver extends TestDriver<Transaction, Map<String, String>, D
                 peopleResponse.person1.size() == peopleResponse.person2.size()) {
 
             for (int i = 0; i < peopleResponse.person1.size(); i++) {
+                if (Long.parseLong(peopleResponse.person1.get(i).id) % 2 == 0) {
+                    continue;
+                }
                 if (Integer.parseInt(peopleResponse.person1.get(i).value) +
                         Integer.parseInt(peopleResponse.person2.get(i).value) <= 0) {
 

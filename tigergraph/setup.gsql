@@ -223,7 +223,8 @@ CREATE OR REPLACE QUERY wsR() {
   MapAccum<INT, INT> @@pValues;
   MaxAccum<INT> @nextId, @nextValue;
   P = SELECT p FROM Person:p ACCUM @@pValues += (p.id -> p.version);
-  P = SELECT p FROM Person:p 
+  P = SELECT p FROM Person:p
+    WHERE p.id % 2 == 1
     ACCUM p.@nextId += p.id+1, p.@nextValue += @@pValues.get(p.id+1) 
     HAVING p.version + p.@nextValue <= 0;
   PRINT P[P.id AS p1id, P.version AS p1value, P.@nextId AS p2id, P.@nextValue AS p2value] AS result;

@@ -698,6 +698,7 @@ public class JanusGraphDriver extends TestDriver {
                 List<Vertex> vertices = g.V().hasLabel("person").next(20);
                 for(Vertex person1: vertices) {
                     long personID = person1.value("id");
+                    if (personID % 2 == 0) continue;
                     System.out.println(personID);
                     if (g.V().hasLabel("Person").property("id",personID+1).hasNext()) {
                         System.out.println("hello");
